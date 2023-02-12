@@ -22,9 +22,9 @@ struct evtol_prop_exc : public std::exception
     const uint32_t  getEId();
 };
 
-
 class evtol_prop {
 public:
+    const char* kName;
     const uint32_t kCruiseSpeedMph;
     const uint32_t kBattKwh;
     const double kTimeToChargeHrs;
@@ -32,7 +32,9 @@ public:
     const uint32_t kMaxPassengers;
     const double kFaultProbPerHour;
     const double kMaxDistance;
+    const double kMaxCruiseHrs;
     evtol_prop(
+            const char* name,
             uint32_t cruiseSpeedMph,
             uint32_t battKwh,
             double timeToChargeHrs,
@@ -40,9 +42,34 @@ public:
             uint32_t maxPassergers,
             double faultProbPerHour
     );
+    //evtol_prop();
     void disp( void );
 
 };
 
+enum evtol_companies
+{
+    ALPHA,
+    BRAVO,
+    CHARLIE,
+    DELTA,
+    ECHO,
+
+    NUM_COMPANIES
+};
+
+class evtol_list
+{
+    evtol_prop alpha;
+    evtol_prop bravo;
+    evtol_prop charlie;
+    evtol_prop delta;
+    evtol_prop echo;
+    evtol_prop *lst[ NUM_COMPANIES ];
+public:
+    evtol_list();
+    void disp( void );
+    vector
+};
 
 #endif //EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H
