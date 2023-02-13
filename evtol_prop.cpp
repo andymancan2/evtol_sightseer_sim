@@ -80,8 +80,44 @@ evtol_list::evtol_list()
           charlie("CHARLIE", 160, 220, .8, 2.2, 3, 0.05),
           delta("DELTA", 90, 120, .62, .8, 2, 0.22),
           echo("ECHO", 30, 150, .3, 5.8, 2, 0.61),
-          lst{&alpha, &bravo, &charlie, &delta, &echo} {
+          lst{&alpha, &bravo, &charlie, &delta, &echo}
+{
+    maxPassCnt = 0;
+    for (uint16_t i=0; i < NUM_COMPANIES; i++)
+    {
+        if (lst[i]->kMaxPassengers > maxPassCnt)
+        {
+            maxPassCnt = lst[i]->kMaxPassengers;
+        }
+    }
+}
 
+evtol_prop * evtol_list::getCompanyProperty( evtol_companies_e company )
+{
+  return lst[ company ];
+}
+
+double evtol_list::getCruiseMinEnergy( evtol_companies_e company )
+{
+    double RV;
+    const double cruiseDistancePerMin = lst[ company ]->kCruiseSpeedMph / 60;
+
+    RV = cruiseDistancePerMin * lst[ company ]->kEnergyUseKwhPerMile;
+    return RV;
+}
+
+double evtol_list::getChargeMinEnergy( evtol_companies_e company )
+{
+    double RV = lst[ company ]->kTimeToChargeHrs / 60;
+
+    return RV;
+}
+
+uint16_t evtol_list::getRndVehPassCnt( void )
+{
+    uint16_t RV = (rand() % (maxPassCnt - 1)) + 1;
+
+    return RV;
 }
 
 /// \brief

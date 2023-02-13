@@ -1,11 +1,11 @@
 ///
 
 #include "evtol_prop.h"
+#include "vehicle.h"
 #include <iostream>
 #include <assert.h>
 
 using namespace std;
-
 
 void unitTest( void )
 {
@@ -41,8 +41,10 @@ void unitTest( void )
     tst.disp();
     evtol_prop tstA("alpha", 120, 320, .6, 1.6, 4, 0.25);
     tstA.disp();
-    evtol_list evtolLst;
+    extern evtol_list evtolLst;
     evtolLst.disp();
+    veh_sim vv;
+    cout << "UT done\n";
 }
 
 int main()

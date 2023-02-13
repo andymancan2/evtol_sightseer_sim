@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <exception>
 
-enum evtol_prop_exc_ids
+enum evtol_prop_exc_ids_e
 {
     INVALID_PASSENGER_PARAM,
     INVALID_ENERGY_USE,
@@ -47,7 +47,7 @@ public:
 
 };
 
-enum evtol_companies
+enum evtol_companies_e
 {
     ALPHA,
     BRAVO,
@@ -66,10 +66,18 @@ class evtol_list
     evtol_prop delta;
     evtol_prop echo;
     evtol_prop *lst[ NUM_COMPANIES ];
+    uint16_t maxPassCnt;
+    //evtol_prop &arr[ NUM_COMPANIES ];
 public:
     evtol_list();
+    evtol_prop * getCompanyProperty( evtol_companies_e company );
+    double getCruiseMinEnergy( evtol_companies_e company );
+    double getChargeMinEnergy( evtol_companies_e company );
+    uint16_t getRndVehPassCnt( void );
+
     void disp( void );
-    vector
 };
+
+
 
 #endif //EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H
