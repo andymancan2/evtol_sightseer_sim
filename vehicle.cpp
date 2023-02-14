@@ -61,9 +61,13 @@ sim_result_e vehicle::sim( void )
 
     return RV;
 }
-void vehicle::startFlight( void )
+void vehicle::startFlight( uint16_t numPass )
 {
-   currentState = IN_FLIGHT;
+    currentState = IN_FLIGHT;
+}
+void vehicle::startCharging( void )
+{
+    currentState = CHARGE_IN_PROGRESS;
 }
 charger_stations::charger_stations( void )
 {
@@ -97,9 +101,20 @@ bool charger_stations::freeVehFromCharger( uint16_t vehID )
     }
     return RV;
 }
+uint16_t  charger_stations::getNumOfChargersAvail( void )
+{
+    uint16_t numAvail = 0;
 
-flight_mission::flight_mission( uint8_t passCnt )
-    : neededPassengerCnt( passCnt )
+    for (uint16_t i=0; i < kNumChargers; i++)
+    {
+        if (chargers[i] != kEmptyCharger)
+        {
+            numAvail++;
+        }
+    }
+    return numAvail;
+}
+void charger_stations::getChargingList( std::vector<uint16_t> &chargingList )
 {
 
 }
@@ -147,25 +162,22 @@ veh_sim::veh_sim( uint32_t seed )
     }
 }
 
-uint16_t veh_sim::findIdleVeh( flight_mission mission )
+uint16_t veh_sim::findIdleVeh( uint16_t mission )
 {
     uint16_t RV = kInvalidVeh;
 
     return RV;
 }
-uint16_t veh_sim::findChargingQVeh( flight_mission mission )
+void veh_sim::reorderChargerWaitingQForNextMissions( uint16_t numChargersAvail )
 {
-    uint16_t RV = kInvalidVeh;
-
-    return RV;
+    vector<uint16_t> chargingList;
+    vector<uint16_t> nextMissionIdxs;
+    chargerStations.getChargingList(chargingList);
 }
+/// \brief Simulate one minute.
 void veh_sim::simMinute( void )
 {
-    if (missionQ.size() < kNumSimVehicles)
-    {
-        flight_mission m( evtolLst.getRndVehPassCnt() );
-        missionQ.push_back( m );
-    }
+    // Update each vehicle's simulation.
     for (uint16_t i=0; i < kNumSimVehicles; i++)
     {
         switch (v[i].sim())
@@ -177,16 +189,42 @@ void veh_sim::simMinute( void )
                 break;
             case CHARGE_COMOPLETE:
                 idleVs.push_back( i );
+                chargerStations.freeVehFromCharger( i );
                 break;
             default:
                 assert(1);
                 break;
         }
     }
-    uint16_t idleVehFound = findIdleVeh(idleVs[0]);
-    if (idleVehFound != kInvalidVeh)
-    {
-        v[idleVehFound].startFlight();
+
+    // Start a single mission.
+    if (idleVs.size() > 0) {
+        for (uint16_t i=0; i < missionQ.size(); i++) {
+            uint16_t idleVehFound = findIdleVeh(missionQ[i] );
+            if (idleVehFound != kInvalidVeh) {
+                uint16_t vehID = idleVs[idleVehFound];
+                uint16_t numPass = missionQ[i];
+                missionQ.erase( missionQ.begin() + i );
+                idleVs.erase(idleVs.begin() + idleVehFound);
+                v[vehID].startFlight(numPass);
+                break;// Only start one mission per minute, thus break.
+            }
+        }
+    }
+
+    // Update the charger based on future missions.
+    uint16_t numChargersAvail = chargerStations.getNumOfChargersAvail();
+    if (numChargersAvail > 0) {
+        reorderChargerWaitingQForNextMissions( numChargersAvail );
+        for (uint16_t i=0; i < numChargersAvail; i++) {
+            if (needChargingQ.size() > 0)
+            {
+                uint16_t vehID = needChargingQ[0];
+                needChargingQ.erase(needChargingQ.begin() );
+                chargerStations.addVehToCharger( vehID );
+                v[ vehID ].startCharging();
+            }
+        }
     }
 }
 void veh_sim::simulate( uint16_t simMinutes, uint32_t seed )

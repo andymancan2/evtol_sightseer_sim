@@ -7,6 +7,8 @@
 
 using namespace std;
 
+/// \brief Bottom up unit test.
+/// TODO: Install google test then utilize mock classes for a top-down testing.
 void unitTest( void )
 {
     try {
@@ -43,6 +45,7 @@ void unitTest( void )
     tstA.disp();
     extern evtol_list evtolLst;
     evtolLst.disp();
+    cout << "Perform visual inspection that above print statements match the company specs.\n";
     veh_sim vv;
     cout << "UT done\n";
 }
