@@ -11,6 +11,11 @@
 
 using namespace std;
 
+// Globals
+#undef etype
+#define etype(x) #x
+const char *strCompanies[] = { COMPANY_LIST };
+
 evtol_prop_exc::evtol_prop_exc(uint32_t EId)
         : kEId(EId) {
 }
@@ -88,7 +93,7 @@ evtol_list::evtol_list()
 {
     maxPassCnt = 0;
 
-    for (uint16_t i=0; i < NUM_COMPANIES; i++)
+    for (uint16_t i=0; i < C_NUM_COMPANIES; i++)
     {
         if (lst[i]->kMaxPassengers > maxPassCnt)
         {
@@ -98,12 +103,12 @@ evtol_list::evtol_list()
 }
 void evtol_list::unitTest( void )
 {
-    assert( getCompanyProperty(ALPHA)->kName == alpha.kName );
-    assert( getCompanyProperty(ALPHA)->kName == "ALPHA" );
-    assert( getCompanyProperty(BRAVO)->kName == "BRAVO" );
-    assert( getCompanyProperty(CHARLIE)->kName == "CHARLIE" );
-    assert( getCompanyProperty(DELTA)->kName == "DELTA" );
-    assert( getCompanyProperty(ECHO)->kName == "ECHO" );
+    assert( getCompanyProperty(C_ALPHA)->kName == alpha.kName );
+    assert( getCompanyProperty(C_ALPHA)->kName == "ALPHA" );
+    assert( getCompanyProperty(C_BRAVO)->kName == "BRAVO" );
+    assert( getCompanyProperty(C_CHARLIE)->kName == "CHARLIE" );
+    assert( getCompanyProperty(C_DELTA)->kName == "DELTA" );
+    assert( getCompanyProperty(C_ECHO)->kName == "ECHO" );
 }
 evtol_prop * evtol_list::getCompanyProperty( evtol_companies_e company )
 {
@@ -143,7 +148,7 @@ uint16_t evtol_list::getRndVehPassCnt( void )
 
 /// \brief
 void evtol_list::disp(void) {
-    for (uint8_t i = 0; i < NUM_COMPANIES; i++) {
+    for (uint8_t i = 0; i < C_NUM_COMPANIES; i++) {
         lst[i]->disp();
     }
 }

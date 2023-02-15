@@ -7,16 +7,18 @@
 
 #include "evtol_prop.h"
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 using namespace std;
 
-enum vehicle_state_e
-{
-    IDLE,
-    IN_FLIGHT,
-    WAITING_FOR_CHARGER,
-    CHARGE_IN_PROGRESS
-};
+#define VEHICLE_STATES \
+    vstype(IDLE), \
+    vstype(IN_FLIGHT),   \
+    vstype(WAIT_CHARGE),  \
+    vstype(IN_CHARGE)
+#define vstype(x) VS_##x
+typedef enum { VEHICLE_STATES } vehicle_state_e;
 
 enum sim_result_e
 {
@@ -32,6 +34,7 @@ public:
 private:
     vehicle_state_e currentState;
     double batteryCapacity;
+    uint16_t missionPassCnt;
     uint16_t totFaultCount;
     uint16_t missionFaultCount;
     uint16_t numFlights;
@@ -42,6 +45,7 @@ private:
     uint16_t missionChargeTime;
     double   totDistance;
     double   missionDistance;
+    double   totPassMiles;
 public:
     vehicle( evtol_companies_e company );
     sim_result_e sim( void );
@@ -49,7 +53,8 @@ public:
     void startCharging( void );
     vehicle_state_e getCurrentState( void );
     void disp( void );
-    //TODO: Add mission log.
+    void displayStatistics( string s );
+    string logEntry( void );
 };
 
 const uint16_t kNumChargers = 3;
@@ -66,11 +71,16 @@ public:
     bool addVehToCharger( uint16_t vehID );
     bool freeVehFromCharger( uint16_t vehID );
     uint16_t  getNumOfChargersAvail( void );
+    uint16_t  getNumOfChargersInUse( void );
     void getChargingList( std::vector<uint16_t> &chargingList );
 };
 class veh_sim {
+private:
+    ofstream log;
+    const uint32_t seedForRandomVehicleConfiguration;
+    uint32_t seedForStartingSimulation;
 public:
-    //std::vector< vehicle > v;
+    std::vector< vehicle > v;
     std::vector< uint16_t > idleVs;
     std::vector< uint16_t > needChargingQ;
     std::vector< uint16_t > missionQ;
@@ -82,7 +92,10 @@ public:
     void reorderChargerWaitingQForNextMissions( uint16_t numChargersAvail );
     void simMinute( void );
     void simulate( uint16_t simMinutes,  uint32_t seed=1000 );
+    void addLogHeader( void );
     void addLogRow( uint16_t simMin );
+    void checkSimConsistency( void );
+    void displayVehicleStats( void );
 };
 
 

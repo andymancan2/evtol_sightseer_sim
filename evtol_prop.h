@@ -48,16 +48,17 @@ public:
 
 };
 
-enum evtol_companies_e
-{
-    ALPHA,
-    BRAVO,
-    CHARLIE,
-    DELTA,
-    ECHO,
 
-    NUM_COMPANIES
-};
+#define COMPANY_LIST \
+    etype(ALPHA), \
+    etype(BRAVO),   \
+    etype(CHARLIE),  \
+    etype(DELTA),  \
+    etype(ECHO), \
+    etype(NUM_COMPANIES)
+#define etype(x) C_##x
+typedef enum { COMPANY_LIST } evtol_companies_e;
+
 
 class evtol_list
 {
@@ -66,7 +67,7 @@ class evtol_list
     evtol_prop charlie;
     evtol_prop delta;
     evtol_prop echo;
-    evtol_prop *lst[ NUM_COMPANIES ];
+    evtol_prop *lst[ C_NUM_COMPANIES ];
     uint16_t maxPassCnt;
 public:
     evtol_list();

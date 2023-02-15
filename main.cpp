@@ -47,7 +47,7 @@ void unitTest( void )
     extern evtol_list evtolLst;
     evtolLst.disp();
     cout << "Perform visual inspection that above print statements match the company specs.\n";
-    cout << "Alpha name = " << evtolLst.getCompanyProperty(ALPHA)->kName << endl;
+    cout << "Alpha name = " << evtolLst.getCompanyProperty(C_ALPHA)->kName << endl;
     evtolLst.unitTest();
     charger_stations cs;
     assert( cs.addVehToCharger(0) == true );
@@ -58,10 +58,10 @@ void unitTest( void )
     assert( cs.freeVehFromCharger( 2 ) == true );
     assert( cs.freeVehFromCharger( 1 ) == true );
     assert( cs.freeVehFromCharger( 0 ) == true );
-    for (uint16_t company=ALPHA; company < NUM_COMPANIES; company++) {
+    for (uint16_t company=C_ALPHA; company < C_NUM_COMPANIES; company++) {
         vehicle v( (evtol_companies_e)company);
         cout << "kCompany: " << v.kCompany << endl;
-        assert(v.getCurrentState() == IDLE);
+        assert(v.getCurrentState() == VS_IDLE);
         assert(v.sim() == NO_CHANGE);
         cout << "kBattKwh: " << evtolLst.getCompanyProperty((evtol_companies_e)company)->kBattKwh << endl;
         cout << "cruise min energy: " << evtolLst.getCruiseMinEnergy((evtol_companies_e)company) << endl;
@@ -72,36 +72,36 @@ void unitTest( void )
                                     evtolLst.getCruiseMinEnergy((evtol_companies_e)company)) - 1;
         cout << "vFlightMins = " << vFlightMins << endl;
         v.startFlight(1);
-        assert(v.getCurrentState() == IN_FLIGHT);
+        assert(v.getCurrentState() == VS_IN_FLIGHT);
         for (uint16_t i = 0; i < vFlightMins; i++) {
             assert(v.sim() == NO_CHANGE);
-            assert(v.getCurrentState() == IN_FLIGHT);
+            assert(v.getCurrentState() == VS_IN_FLIGHT);
         }
         v.disp();
         assert(v.sim() == FLIGHT_COMPLETE);
-        assert(v.getCurrentState() == WAITING_FOR_CHARGER);
+        assert(v.getCurrentState() == VS_WAIT_CHARGE);
         assert(v.sim() == NO_CHANGE);
-        assert(v.getCurrentState() == WAITING_FOR_CHARGER);
+        assert(v.getCurrentState() == VS_WAIT_CHARGE);
         assert(v.sim() == NO_CHANGE);
         v.startCharging();
-        assert(v.getCurrentState() == CHARGE_IN_PROGRESS);
+        assert(v.getCurrentState() == VS_IN_CHARGE);
         uint16_t vChargeMins = ceil(evtolLst.getCompanyProperty((evtol_companies_e)company)->kTimeToChargeHrs * 60) ;
         cout << "vChargeMins:" << vChargeMins << endl;
         cout << "charge per min: " << evtolLst.getChargeMinEnergy( (evtol_companies_e)company )<< endl;
         for (uint16_t i = 0; i < vChargeMins; i++) {
             //cout << "i:" << i << ", vChargeMins:" << vChargeMins << endl;
             assert(v.sim() == NO_CHANGE);
-            assert(v.getCurrentState() == CHARGE_IN_PROGRESS);
+            assert(v.getCurrentState() == VS_IN_CHARGE);
         }
         v.disp();
         assert(v.sim() == CHARGE_COMOPLETE);
-        assert(v.getCurrentState() == IDLE);
+        assert(v.getCurrentState() == VS_IDLE);
         assert(v.sim() == NO_CHANGE);
-        assert(v.getCurrentState() == IDLE);
+        assert(v.getCurrentState() == VS_IDLE);
         v.disp();
     }
 
-    veh_sim vv;
+    //veh_sim vv;
 #if 0
     cout << "UT done\n";
 
@@ -133,5 +133,9 @@ int main()
 {
     std::cout << "Hello, World!" << std::endl;
     unitTest();
+
+    veh_sim vs;
+    vs.simulate( 180 );
+    vs.displayVehicleStats();
     return 0;
 }
