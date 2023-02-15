@@ -9,6 +9,7 @@
 #include <exception>
 #include <map>
 
+/// \brief Enumeration of exception IDs for invalid properties.
 enum evtol_prop_exc_ids_e
 {
     INVALID_PASSENGER_PARAM,
@@ -16,6 +17,8 @@ enum evtol_prop_exc_ids_e
     INVALID_CRUISE,
     INVALID_BATT_CAPACITY,
 };
+
+/// \brief Exception list for invalid evtol properties.
 struct evtol_prop_exc : public std::exception
 {
     const uint32_t kEId;
@@ -23,6 +26,7 @@ struct evtol_prop_exc : public std::exception
     const uint32_t  getEId();
 };
 
+/// \brief Represents the evtol for a single company.
 class evtol_prop {
 public:
     const char* kName;
@@ -43,12 +47,11 @@ public:
             uint32_t maxPassergers,
             double faultProbPerHour
     );
-    //evtol_prop();
     void disp( void );
-
 };
 
-
+//TODO: This 'C' language pattern for managing enums and string versions of enums is convenient.
+//      But may need to be revised for coding standard.
 #define COMPANY_LIST \
     etype(ALPHA), \
     etype(BRAVO),   \
@@ -58,8 +61,9 @@ public:
     etype(NUM_COMPANIES)
 #define etype(x) C_##x
 typedef enum { COMPANY_LIST } evtol_companies_e;
+const char * getCompanyName( evtol_companies_e c );
 
-
+/// \brief A class to manage all evtol company properties.
 class evtol_list
 {
     evtol_prop alpha;
@@ -80,7 +84,5 @@ public:
 
     void disp( void );
 };
-
-
 
 #endif //EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H

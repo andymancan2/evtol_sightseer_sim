@@ -77,7 +77,7 @@ void unitTest( void )
             assert(v.sim() == NO_CHANGE);
             assert(v.getCurrentState() == VS_IN_FLIGHT);
         }
-        v.disp();
+        //v.disp();
         assert(v.sim() == FLIGHT_COMPLETE);
         assert(v.getCurrentState() == VS_WAIT_CHARGE);
         assert(v.sim() == NO_CHANGE);
@@ -93,40 +93,13 @@ void unitTest( void )
             assert(v.sim() == NO_CHANGE);
             assert(v.getCurrentState() == VS_IN_CHARGE);
         }
-        v.disp();
+        //v.disp();
         assert(v.sim() == CHARGE_COMOPLETE);
         assert(v.getCurrentState() == VS_IDLE);
         assert(v.sim() == NO_CHANGE);
         assert(v.getCurrentState() == VS_IDLE);
-        v.disp();
+        //v.disp();
     }
-
-    //veh_sim vv;
-#if 0
-    cout << "UT done\n";
-
-    double p=0.05;//0.25;
-    double faultsPerMin = p / 60;
-    uint32_t minuteOccurence = ceil( 1 / faultsPerMin );
-    uint32_t fault_count = 0;
-    uint32_t fc2 = 0;
-    cout << "p: " << p << endl;
-    cout << "faultsPerMin: " << faultsPerMin << endl;
-    cout << "minuteOccurence: " << minuteOccurence << endl;
-    for (uint32_t i=0; i < (160000*60); i++)
-    {
-        if ((rand() % minuteOccurence) == 0)
-        {
-            fault_count++;
-        }
-        if (rand() < (faultsPerMin*RAND_MAX) )
-        {
-            fc2++;
-        }
-    }
-    cout << "fault_count: " << fault_count << endl;
-    cout << "fc2: " << fc2 << endl;
-#endif
 }
 
 int main()

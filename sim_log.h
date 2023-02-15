@@ -1,8 +1,0 @@
-//
-// Created by ajlou on 2/14/2023.
-//
-
-#ifndef EVTOL_SIGHTSEER_SIM_SIM_LOG_H
-#define EVTOL_SIGHTSEER_SIM_SIM_LOG_H
-
-#endif //EVTOL_SIGHTSEER_SIM_SIM_LOG_H

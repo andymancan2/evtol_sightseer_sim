@@ -5,7 +5,6 @@
 #ifndef EVTOL_SIGHTSEER_SIM_UTIL_H
 #define EVTOL_SIGHTSEER_SIM_UTIL_H
 
-const uint16_t kNumSimVehicles =  20;
 bool cmpZero(double A, double B, double epsilon = 0.001);
 bool cmpGreaterOrEqual(double A, double B, double epsilon = 0.001);
 bool cmpLessOrEqual(double A, double B, double epsilon = 0.001);
