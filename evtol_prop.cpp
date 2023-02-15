@@ -5,6 +5,8 @@
 #include "evtol_prop.h"
 #include "util.h"
 #include <iostream>
+#include <assert.h>
+#include <cmath>
 
 
 using namespace std;
@@ -50,7 +52,7 @@ evtol_prop::evtol_prop(const char *name, uint32_t cruiseSpeedMph, uint32_t battK
     if (kBattKwh == 0) {
         throw InvalidBattCapacity;
     }
-    if (cmpd(kEnergyUseKwhPerMile, 0.0)) {
+    if (cmpZero(kEnergyUseKwhPerMile, 0.0)) {
         throw InvalidEnergyUse;
     }
     if (kMaxPassengers == 0) {
@@ -58,6 +60,8 @@ evtol_prop::evtol_prop(const char *name, uint32_t cruiseSpeedMph, uint32_t battK
     }
 
 }
+
+
 
 /// \brief
 void evtol_prop::disp(void) {
@@ -83,6 +87,7 @@ evtol_list::evtol_list()
           lst{&alpha, &bravo, &charlie, &delta, &echo}
 {
     maxPassCnt = 0;
+
     for (uint16_t i=0; i < NUM_COMPANIES; i++)
     {
         if (lst[i]->kMaxPassengers > maxPassCnt)
@@ -91,7 +96,15 @@ evtol_list::evtol_list()
         }
     }
 }
-
+void evtol_list::unitTest( void )
+{
+    assert( getCompanyProperty(ALPHA)->kName == alpha.kName );
+    assert( getCompanyProperty(ALPHA)->kName == "ALPHA" );
+    assert( getCompanyProperty(BRAVO)->kName == "BRAVO" );
+    assert( getCompanyProperty(CHARLIE)->kName == "CHARLIE" );
+    assert( getCompanyProperty(DELTA)->kName == "DELTA" );
+    assert( getCompanyProperty(ECHO)->kName == "ECHO" );
+}
 evtol_prop * evtol_list::getCompanyProperty( evtol_companies_e company )
 {
   return lst[ company ];
@@ -100,15 +113,23 @@ evtol_prop * evtol_list::getCompanyProperty( evtol_companies_e company )
 double evtol_list::getCruiseMinEnergy( evtol_companies_e company )
 {
     double RV;
-    const double cruiseDistancePerMin = lst[ company ]->kCruiseSpeedMph / 60;
+    //const double //cruiseDistancePerMin = (double)lst[ company ]->kCruiseSpeedMph / 60;
 
-    RV = cruiseDistancePerMin * lst[ company ]->kEnergyUseKwhPerMile;
+    RV = getCruiseMinDistance( company ) * lst[ company ]->kEnergyUseKwhPerMile;
     return RV;
 }
 
 double evtol_list::getChargeMinEnergy( evtol_companies_e company )
 {
-    double RV = lst[ company ]->kTimeToChargeHrs / 60;
+    double timeToChargeMins = lst[ company ]->kTimeToChargeHrs * 60;
+    double RV = (lst[ company ]->kBattKwh / timeToChargeMins);
+
+    return RV;
+}
+
+double evtol_list::getCruiseMinDistance( evtol_companies_e company )
+{
+    double RV = (double)lst[ company ]->kCruiseSpeedMph / 60;
 
     return RV;
 }

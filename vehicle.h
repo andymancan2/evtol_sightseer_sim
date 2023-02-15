@@ -28,14 +28,27 @@ enum sim_result_e
 class vehicle {
 public:
     const evtol_companies_e kCompany;
+    const uint32_t faultScaler;
 private:
     vehicle_state_e currentState;
     double batteryCapacity;
+    uint16_t totFaultCount;
+    uint16_t missionFaultCount;
+    uint16_t numFlights;
+    uint16_t numCharges;
+    uint16_t totFlightTime;
+    uint16_t missionFlightTime;
+    uint16_t totChargeTime;
+    uint16_t missionChargeTime;
+    double   totDistance;
+    double   missionDistance;
 public:
     vehicle( evtol_companies_e company );
     sim_result_e sim( void );
     void startFlight( uint16_t numPass );
     void startCharging( void );
+    vehicle_state_e getCurrentState( void );
+    void disp( void );
     //TODO: Add mission log.
 };
 
@@ -57,17 +70,19 @@ public:
 };
 class veh_sim {
 public:
-    std::vector< vehicle > v;
+    //std::vector< vehicle > v;
     std::vector< uint16_t > idleVs;
     std::vector< uint16_t > needChargingQ;
     std::vector< uint16_t > missionQ;
     charger_stations chargerStations;
 
     veh_sim( uint32_t seed=0);
-    uint16_t findIdleVeh( uint16_t mission );
+    ~veh_sim();
+    uint16_t findMissionCableVeh( vector<uint16_t> idleVect,uint16_t mission );
     void reorderChargerWaitingQForNextMissions( uint16_t numChargersAvail );
     void simMinute( void );
     void simulate( uint16_t simMinutes,  uint32_t seed=1000 );
+    void addLogRow( uint16_t simMin );
 };
 
 

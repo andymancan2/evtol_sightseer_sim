@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <exception>
+#include <map>
 
 enum evtol_prop_exc_ids_e
 {
@@ -67,13 +68,14 @@ class evtol_list
     evtol_prop echo;
     evtol_prop *lst[ NUM_COMPANIES ];
     uint16_t maxPassCnt;
-    //evtol_prop &arr[ NUM_COMPANIES ];
 public:
     evtol_list();
     evtol_prop * getCompanyProperty( evtol_companies_e company );
     double getCruiseMinEnergy( evtol_companies_e company );
     double getChargeMinEnergy( evtol_companies_e company );
+    double getCruiseMinDistance( evtol_companies_e company );
     uint16_t getRndVehPassCnt( void );
+    void unitTest( void );
 
     void disp( void );
 };

@@ -4,6 +4,7 @@
 #include "vehicle.h"
 #include <iostream>
 #include <assert.h>
+#include <cmath>
 
 using namespace std;
 
@@ -46,8 +47,86 @@ void unitTest( void )
     extern evtol_list evtolLst;
     evtolLst.disp();
     cout << "Perform visual inspection that above print statements match the company specs.\n";
+    cout << "Alpha name = " << evtolLst.getCompanyProperty(ALPHA)->kName << endl;
+    evtolLst.unitTest();
+    charger_stations cs;
+    assert( cs.addVehToCharger(0) == true );
+    assert( cs.addVehToCharger( 1 ) == true );
+    assert( cs.addVehToCharger( 2 ) == true );
+    assert( cs.addVehToCharger( 3 ) == false );
+    assert( cs.freeVehFromCharger( 3 ) == false );
+    assert( cs.freeVehFromCharger( 2 ) == true );
+    assert( cs.freeVehFromCharger( 1 ) == true );
+    assert( cs.freeVehFromCharger( 0 ) == true );
+    for (uint16_t company=ALPHA; company < NUM_COMPANIES; company++) {
+        vehicle v( (evtol_companies_e)company);
+        cout << "kCompany: " << v.kCompany << endl;
+        assert(v.getCurrentState() == IDLE);
+        assert(v.sim() == NO_CHANGE);
+        cout << "kBattKwh: " << evtolLst.getCompanyProperty((evtol_companies_e)company)->kBattKwh << endl;
+        cout << "cruise min energy: " << evtolLst.getCruiseMinEnergy((evtol_companies_e)company) << endl;
+        //uint16_t vFlightMins = fabs(evtolLst.getCompanyProperty((evtol_companies_e)company)->kBattKwh /
+        //                            evtolLst.getCruiseMinEnergy((evtol_companies_e)company));
+        uint16_t vFlightMins = ceil((evtolLst.getCompanyProperty((evtol_companies_e)company)->kBattKwh
+                                       - evtolLst.getCruiseMinEnergy((evtol_companies_e)company)) /
+                                    evtolLst.getCruiseMinEnergy((evtol_companies_e)company)) - 1;
+        cout << "vFlightMins = " << vFlightMins << endl;
+        v.startFlight(1);
+        assert(v.getCurrentState() == IN_FLIGHT);
+        for (uint16_t i = 0; i < vFlightMins; i++) {
+            assert(v.sim() == NO_CHANGE);
+            assert(v.getCurrentState() == IN_FLIGHT);
+        }
+        v.disp();
+        assert(v.sim() == FLIGHT_COMPLETE);
+        assert(v.getCurrentState() == WAITING_FOR_CHARGER);
+        assert(v.sim() == NO_CHANGE);
+        assert(v.getCurrentState() == WAITING_FOR_CHARGER);
+        assert(v.sim() == NO_CHANGE);
+        v.startCharging();
+        assert(v.getCurrentState() == CHARGE_IN_PROGRESS);
+        uint16_t vChargeMins = ceil(evtolLst.getCompanyProperty((evtol_companies_e)company)->kTimeToChargeHrs * 60) ;
+        cout << "vChargeMins:" << vChargeMins << endl;
+        cout << "charge per min: " << evtolLst.getChargeMinEnergy( (evtol_companies_e)company )<< endl;
+        for (uint16_t i = 0; i < vChargeMins; i++) {
+            //cout << "i:" << i << ", vChargeMins:" << vChargeMins << endl;
+            assert(v.sim() == NO_CHANGE);
+            assert(v.getCurrentState() == CHARGE_IN_PROGRESS);
+        }
+        v.disp();
+        assert(v.sim() == CHARGE_COMOPLETE);
+        assert(v.getCurrentState() == IDLE);
+        assert(v.sim() == NO_CHANGE);
+        assert(v.getCurrentState() == IDLE);
+        v.disp();
+    }
+
     veh_sim vv;
+#if 0
     cout << "UT done\n";
+
+    double p=0.05;//0.25;
+    double faultsPerMin = p / 60;
+    uint32_t minuteOccurence = ceil( 1 / faultsPerMin );
+    uint32_t fault_count = 0;
+    uint32_t fc2 = 0;
+    cout << "p: " << p << endl;
+    cout << "faultsPerMin: " << faultsPerMin << endl;
+    cout << "minuteOccurence: " << minuteOccurence << endl;
+    for (uint32_t i=0; i < (160000*60); i++)
+    {
+        if ((rand() % minuteOccurence) == 0)
+        {
+            fault_count++;
+        }
+        if (rand() < (faultsPerMin*RAND_MAX) )
+        {
+            fc2++;
+        }
+    }
+    cout << "fault_count: " << fault_count << endl;
+    cout << "fc2: " << fc2 << endl;
+#endif
 }
 
 int main()
