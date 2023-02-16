@@ -1,0 +1,109 @@
+<html>
+<head>
+<title>evtol_prop.h</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bbb529;}
+.s3 { color: #6a8759;}
+.s4 { color: #cc7832;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+evtol_prop.h</font>
+</center></td></tr></table>
+<pre><span class="s0">//</span>
+<span class="s0">// Created by ajlou on 2/11/2023.</span>
+<span class="s0">//</span>
+
+<span class="s2">#ifndef </span><span class="s1">EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H</span>
+<span class="s2">#define </span><span class="s1">EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H</span>
+
+<span class="s2">#include </span><span class="s3">&lt;cstdint&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;exception&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;map&gt;</span>
+
+<span class="s0">/// \brief Enumeration of exception IDs for invalid properties.</span>
+<span class="s4">enum </span><span class="s1">evtol_prop_exc_ids_e</span>
+<span class="s1">{</span>
+    <span class="s1">INVALID_PASSENGER_PARAM</span><span class="s4">,</span>
+    <span class="s1">INVALID_ENERGY_USE</span><span class="s4">,</span>
+    <span class="s1">INVALID_CRUISE</span><span class="s4">,</span>
+    <span class="s1">INVALID_BATT_CAPACITY</span><span class="s4">,</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Exception list for invalid evtol properties.</span>
+<span class="s4">struct </span><span class="s1">evtol_prop_exc : </span><span class="s4">public </span><span class="s1">std::exception</span>
+<span class="s1">{</span>
+    <span class="s4">const </span><span class="s1">uint32_t kEId</span><span class="s4">;</span>
+    <span class="s1">evtol_prop_exc( uint32_t EId )</span><span class="s4">;</span>
+    <span class="s4">const </span><span class="s1">uint32_t  getEId()</span><span class="s4">;</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Represents the evtol for a single company.</span>
+<span class="s4">class </span><span class="s1">evtol_prop {</span>
+<span class="s4">public</span><span class="s1">:</span>
+    <span class="s4">const char</span><span class="s1">* kName</span><span class="s4">;</span>
+    <span class="s4">const </span><span class="s1">uint32_t kCruiseSpeedMph</span><span class="s4">;</span>
+    <span class="s4">const </span><span class="s1">uint32_t kBattKwh</span><span class="s4">;</span>
+    <span class="s4">const double </span><span class="s1">kTimeToChargeHrs</span><span class="s4">;</span>
+    <span class="s4">const double </span><span class="s1">kEnergyUseKwhPerMile</span><span class="s4">;</span>
+    <span class="s4">const </span><span class="s1">uint32_t kMaxPassengers</span><span class="s4">;</span>
+    <span class="s4">const double </span><span class="s1">kFaultProbPerHour</span><span class="s4">;</span>
+    <span class="s4">const double </span><span class="s1">kMaxDistance</span><span class="s4">;</span>
+    <span class="s4">const double </span><span class="s1">kMaxCruiseHrs</span><span class="s4">;</span>
+    <span class="s1">evtol_prop(</span>
+            <span class="s4">const char</span><span class="s1">* name</span><span class="s4">,</span>
+            <span class="s1">uint32_t cruiseSpeedMph</span><span class="s4">,</span>
+            <span class="s1">uint32_t battKwh</span><span class="s4">,</span>
+            <span class="s4">double </span><span class="s1">timeToChargeHrs</span><span class="s4">,</span>
+            <span class="s4">double </span><span class="s1">energyUseKwhPerMil</span><span class="s4">,</span>
+            <span class="s1">uint32_t maxPassergers</span><span class="s4">,</span>
+            <span class="s4">double </span><span class="s1">faultProbPerHour</span>
+    <span class="s1">)</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">disp( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s0">//TODO: This 'C' language pattern for managing enums and string versions of enums is convenient.</span>
+<span class="s0">//      But may need to be revised for coding standard.</span>
+<span class="s2">#define </span><span class="s1">COMPANY_LIST \ 
+    etype(ALPHA)</span><span class="s4">, </span><span class="s1">\ 
+    etype(BRAVO)</span><span class="s4">,   </span><span class="s1">\ 
+    etype(CHARLIE)</span><span class="s4">,  </span><span class="s1">\ 
+    etype(DELTA)</span><span class="s4">,  </span><span class="s1">\ 
+    etype(ECHO)</span><span class="s4">, </span><span class="s1">\ 
+    etype(NUM_COMPANIES)</span>
+<span class="s2">#define </span><span class="s1">etype(x) C_##x</span>
+<span class="s4">typedef enum </span><span class="s1">{ COMPANY_LIST } evtol_companies_e</span><span class="s4">;</span>
+<span class="s4">const char </span><span class="s1">* getCompanyName( evtol_companies_e c )</span><span class="s4">;</span>
+
+<span class="s0">/// \brief A class to manage all evtol company properties.</span>
+<span class="s4">class </span><span class="s1">evtol_list</span>
+<span class="s1">{</span>
+    <span class="s1">evtol_prop alpha</span><span class="s4">;</span>
+    <span class="s1">evtol_prop bravo</span><span class="s4">;</span>
+    <span class="s1">evtol_prop charlie</span><span class="s4">;</span>
+    <span class="s1">evtol_prop delta</span><span class="s4">;</span>
+    <span class="s1">evtol_prop echo</span><span class="s4">;</span>
+    <span class="s1">evtol_prop *lst[ C_NUM_COMPANIES ]</span><span class="s4">;</span>
+    <span class="s1">uint16_t maxPassCnt</span><span class="s4">;</span>
+<span class="s4">public</span><span class="s1">:</span>
+    <span class="s1">evtol_list()</span><span class="s4">;</span>
+    <span class="s1">evtol_prop * getCompanyProperty( evtol_companies_e company )</span><span class="s4">;</span>
+    <span class="s4">double </span><span class="s1">getCruiseMinEnergy( evtol_companies_e company )</span><span class="s4">;</span>
+    <span class="s4">double </span><span class="s1">getChargeMinEnergy( evtol_companies_e company )</span><span class="s4">;</span>
+    <span class="s4">double </span><span class="s1">getCruiseMinDistance( evtol_companies_e company )</span><span class="s4">;</span>
+    <span class="s1">uint16_t getRndVehPassCnt( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">unitTest( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+
+    <span class="s4">void </span><span class="s1">disp( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s2">#endif </span><span class="s0">//EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H</span>
+</pre>
+</body>
+</html>

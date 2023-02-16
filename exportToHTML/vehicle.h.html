@@ -1,0 +1,141 @@
+<html>
+<head>
+<title>vehicle.h</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bbb529;}
+.s3 { color: #6a8759;}
+.s4 { color: #cc7832;}
+.s5 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+vehicle.h</font>
+</center></td></tr></table>
+<pre><span class="s0">//</span>
+<span class="s0">// Created by ajlou on 2/12/2023.</span>
+<span class="s0">//</span>
+
+<span class="s2">#ifndef </span><span class="s1">EVTOL_SIGHTSEER_SIM_VEHICLE_H</span>
+<span class="s2">#define </span><span class="s1">EVTOL_SIGHTSEER_SIM_VEHICLE_H</span>
+
+<span class="s2">#include </span><span class="s3">&quot;evtol_prop.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&lt;vector&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;iostream&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;fstream&gt;</span>
+
+<span class="s4">using namespace </span><span class="s1">std</span><span class="s4">;</span>
+
+<span class="s0">//TODO: This 'C' language pattern for managing enums and string versions of enums is convenient.</span>
+<span class="s0">//      But may need tobe revised for coding standard.</span>
+<span class="s2">#define </span><span class="s1">VEHICLE_STATES \ 
+    vstype(IDLE)</span><span class="s4">, </span><span class="s1">\ 
+    vstype(IN_FLIGHT)</span><span class="s4">,   </span><span class="s1">\ 
+    vstype(WAIT_CHARGE)</span><span class="s4">,  </span><span class="s1">\ 
+    vstype(IN_CHARGE)</span>
+<span class="s2">#define </span><span class="s1">vstype(x) VS_##x</span>
+<span class="s4">typedef enum </span><span class="s1">{ VEHICLE_STATES } vehicle_state_e</span><span class="s4">;</span>
+
+<span class="s0">/// \brief A vehicle simulation result may cause a hi-level simulation to move a vehicle between lists.</span>
+<span class="s4">enum </span><span class="s1">sim_result_e</span>
+<span class="s1">{</span>
+    <span class="s1">NO_CHANGE</span><span class="s4">,</span>
+    <span class="s1">FLIGHT_COMPLETE</span><span class="s4">,</span>
+    <span class="s1">CHARGE_COMOPLETE</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Class to simulate a evtol vehicle.</span>
+<span class="s4">class </span><span class="s1">vehicle {</span>
+<span class="s4">public</span><span class="s1">:</span>
+    <span class="s4">const </span><span class="s1">evtol_companies_e kCompany</span><span class="s4">;</span>
+<span class="s4">private</span><span class="s1">:</span>
+    <span class="s1">vehicle_state_e currentState</span><span class="s4">;</span>
+    <span class="s4">double </span><span class="s1">batteryCapacity</span><span class="s4">;</span>
+    <span class="s1">uint16_t missionPassCnt</span><span class="s4">;</span>
+    <span class="s1">uint16_t totFaultCount</span><span class="s4">;</span>
+    <span class="s1">uint16_t missionFaultCount</span><span class="s4">;</span>
+    <span class="s1">uint16_t numFlights</span><span class="s4">;</span>
+    <span class="s1">uint16_t numCharges</span><span class="s4">;</span>
+    <span class="s1">uint16_t totFlightTime</span><span class="s4">;</span>
+    <span class="s1">uint16_t missionFlightTime</span><span class="s4">;</span>
+    <span class="s1">uint16_t totChargeTime</span><span class="s4">;</span>
+    <span class="s1">uint16_t missionChargeTime</span><span class="s4">;</span>
+    <span class="s4">double   </span><span class="s1">totDistance</span><span class="s4">;</span>
+    <span class="s4">double   </span><span class="s1">missionDistance</span><span class="s4">;</span>
+    <span class="s4">double   </span><span class="s1">totPassMiles</span><span class="s4">;</span>
+<span class="s4">public</span><span class="s1">:</span>
+    <span class="s1">vehicle( evtol_companies_e company )</span><span class="s4">;</span>
+    <span class="s1">sim_result_e sim( )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">startFlight( uint16_t numPass )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">startCharging( )</span><span class="s4">;</span>
+    <span class="s1">vehicle_state_e getCurrentState( )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">disp( )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">displayStatistics( string s )</span><span class="s4">;</span>
+    <span class="s1">string logEntry( )</span><span class="s4">;</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s4">const </span><span class="s1">uint16_t kNumSimVehicles =  </span><span class="s5">20</span><span class="s4">;</span>
+<span class="s4">const </span><span class="s1">uint16_t kNumChargers = </span><span class="s5">3</span><span class="s4">;</span>
+
+<span class="s0">/// \brief List of constants below representing an invalid index in an array or queue.</span>
+<span class="s4">const </span><span class="s1">uint16_t kEmptyCharger   = </span><span class="s5">0xffff</span><span class="s4">;</span>
+<span class="s4">const </span><span class="s1">uint16_t kInvalidVeh     = </span><span class="s5">0xfffe</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Simulate the chargers in the simulation.</span>
+<span class="s4">class </span><span class="s1">charger_stations</span>
+<span class="s1">{</span>
+    <span class="s0">/// \brief A value in array is the vehicle ID, which is the index in the simulated vector v.</span>
+    <span class="s1">uint16_t chargers[ kNumChargers ]</span><span class="s4">;</span>
+<span class="s4">public</span><span class="s1">:</span>
+    <span class="s1">charger_stations( )</span><span class="s4">;</span>
+    <span class="s1">~charger_stations( )</span><span class="s4">;</span>
+    <span class="s4">bool </span><span class="s1">addVehToCharger( uint16_t vehID )</span><span class="s4">;</span>
+    <span class="s4">bool </span><span class="s1">freeVehFromCharger( uint16_t vehID )</span><span class="s4">;</span>
+    <span class="s1">uint16_t  getNumOfChargersAvail( )</span><span class="s4">;</span>
+    <span class="s1">uint16_t  getNumOfChargersInUse( )</span><span class="s4">;</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+<span class="s0">/// \brief The hi-level class to perform the simulation.</span>
+<span class="s4">class </span><span class="s1">veh_sim {</span>
+<span class="s4">private</span><span class="s1">:</span>
+    <span class="s0">/// \brief The log file is a per-minute tab-separated file, which viewed best as a spreadsheet.</span>
+    <span class="s1">ofstream log</span><span class="s4">;</span>
+    <span class="s0">/// \brief Seed used for random vehicle configuration.</span>
+    <span class="s4">const </span><span class="s1">uint32_t seedForRandomVehicleConfiguration</span><span class="s4">;</span>
+    <span class="s0">/// \brief Seed used for randomizing the simulation execution.</span>
+    <span class="s1">uint32_t seedForStartingSimulation</span><span class="s4">;</span>
+<span class="s4">public</span><span class="s1">:</span>
+    <span class="s0">/// \brief The list of vehicles which the size remains constant for the simulation.</span>
+    <span class="s1">std::vector&lt; vehicle &gt; v</span><span class="s4">;</span>
+    <span class="s0">/// \brief A list of idle vehicles.</span>
+    <span class="s1">std::vector&lt; uint16_t &gt; idleVs</span><span class="s4">;</span>
+    <span class="s0">/// \brief A list of vehicles that need charging.</span>
+    <span class="s1">std::vector&lt; uint16_t &gt; needChargingQ</span><span class="s4">;</span>
+    <span class="s0">/// \brief A list of future missions to perform limited by the number of vehicles in the simulation.</span>
+    <span class="s1">std::vector&lt; uint16_t &gt; missionQ</span><span class="s4">;</span>
+    <span class="s0">/// \brief Used to simulate the charging for vehicles.</span>
+    <span class="s1">charger_stations chargerStations</span><span class="s4">;</span>
+
+    <span class="s1">veh_sim( uint32_t seed=</span><span class="s5">0</span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">~veh_sim()</span><span class="s4">;</span>
+    <span class="s1">uint16_t findMissionCableVeh( vector&lt;uint16_t&gt; idleVect</span><span class="s4">,</span><span class="s1">uint16_t mission )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">reorderChargerWaitingQForNextMissions( uint16_t numChargersAvail )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">simMinute( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">simulate( uint16_t simMinutes</span><span class="s4">,  </span><span class="s1">uint32_t seed=</span><span class="s5">1000 </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">addLogHeader( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">addLogRow( uint16_t simMin )</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">checkSimConsistency( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s4">void </span><span class="s1">displayVehicleStats( </span><span class="s4">void </span><span class="s1">)</span><span class="s4">;</span>
+<span class="s1">}</span><span class="s4">;</span>
+
+
+
+<span class="s2">#endif </span><span class="s0">//EVTOL_SIGHTSEER_SIM_VEHICLE_H</span>
+</pre>
+</body>
+</html>

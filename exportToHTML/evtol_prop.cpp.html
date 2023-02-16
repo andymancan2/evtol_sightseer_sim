@@ -1,0 +1,201 @@
+<html>
+<head>
+<title>evtol_prop.cpp</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bbb529;}
+.s3 { color: #6a8759;}
+.s4 { color: #cc7832;}
+.s5 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+evtol_prop.cpp</font>
+</center></td></tr></table>
+<pre><span class="s0">//</span>
+<span class="s0">// Created by ajlou on 2/11/2023.</span>
+<span class="s0">//</span>
+
+<span class="s2">#include </span><span class="s3">&quot;evtol_prop.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&quot;util.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&lt;iostream&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;cassert&gt;</span>
+
+
+<span class="s4">using namespace </span><span class="s1">std</span><span class="s4">;</span>
+
+<span class="s0">// Globals</span>
+<span class="s2">#undef </span><span class="s1">etype</span>
+<span class="s2">#define </span><span class="s1">etype(x) #x</span>
+<span class="s4">const char </span><span class="s1">*strCompanies[] = { COMPANY_LIST }</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Get an ascii string representing the company name from an enum.</span>
+<span class="s0">/// \param c</span>
+<span class="s0">/// \return</span>
+<span class="s4">const char </span><span class="s1">* getCompanyName( evtol_companies_e c )</span>
+<span class="s1">{</span>
+    <span class="s4">return </span><span class="s1">strCompanies[ c ]</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Constructor for evtol prop exceptions.</span>
+<span class="s0">/// \param EId</span>
+<span class="s1">evtol_prop_exc::evtol_prop_exc(uint32_t EId)</span>
+        <span class="s1">: kEId(EId) {</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Get the evtol prop exception ID.</span>
+<span class="s0">/// \return</span>
+<span class="s4">const </span><span class="s1">uint32_t evtol_prop_exc::getEId() {</span>
+    <span class="s4">return </span><span class="s1">kEId</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief  List of invalid parameter exceptions evtol prop class.</span>
+<span class="s1">evtol_prop_exc InvalidNumPassangers(INVALID_PASSENGER_PARAM)</span><span class="s4">;</span>
+<span class="s1">evtol_prop_exc InvalidEnergyUse(INVALID_ENERGY_USE)</span><span class="s4">;</span>
+<span class="s1">evtol_prop_exc InvalidCruise(INVALID_CRUISE)</span><span class="s4">;</span>
+<span class="s1">evtol_prop_exc InvalidBattCapacity(INVALID_BATT_CAPACITY)</span><span class="s4">;</span>
+
+<span class="s0">//</span>
+<span class="s0">// Created by ajlou on 2/10/2023.</span>
+<span class="s0">//</span>
+<span class="s0">/// \brief Construct evtol properties.</span>
+<span class="s0">/// \param cruiseSpeedMph</span>
+<span class="s0">/// \param battKwh</span>
+<span class="s0">/// \param timeToChargeHrs</span>
+<span class="s0">/// \param energyUseKwhPerMil</span>
+<span class="s0">/// \param maxPassergers</span>
+<span class="s0">/// \param faultProbPerHour</span>
+<span class="s1">evtol_prop::evtol_prop(</span><span class="s4">const char </span><span class="s1">*name</span><span class="s4">, </span><span class="s1">uint32_t cruiseSpeedMph</span><span class="s4">, </span><span class="s1">uint32_t battKwh</span><span class="s4">, double </span><span class="s1">timeToChargeHrs</span><span class="s4">,</span>
+                       <span class="s4">double </span><span class="s1">energyUseKwhPerMil</span><span class="s4">,</span>
+                       <span class="s1">uint32_t maxPassergers</span><span class="s4">, double </span><span class="s1">faultProbPerHour) :</span>
+        <span class="s1">kName(name)</span><span class="s4">,</span>
+        <span class="s1">kCruiseSpeedMph(cruiseSpeedMph)</span><span class="s4">,</span>
+        <span class="s1">kBattKwh(battKwh)</span><span class="s4">,</span>
+        <span class="s1">kTimeToChargeHrs(timeToChargeHrs)</span><span class="s4">,</span>
+        <span class="s1">kEnergyUseKwhPerMile(energyUseKwhPerMil)</span><span class="s4">,</span>
+        <span class="s1">kMaxPassengers(maxPassergers)</span><span class="s4">,</span>
+        <span class="s1">kFaultProbPerHour(faultProbPerHour)</span><span class="s4">,</span>
+        <span class="s1">kMaxDistance(kBattKwh / kEnergyUseKwhPerMile)</span><span class="s4">,</span>
+        <span class="s1">kMaxCruiseHrs(kMaxDistance / kCruiseSpeedMph) {</span>
+    <span class="s4">if </span><span class="s1">(kCruiseSpeedMph == </span><span class="s5">0</span><span class="s1">) {</span>
+        <span class="s4">throw </span><span class="s1">InvalidCruise</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">if </span><span class="s1">(kBattKwh == </span><span class="s5">0</span><span class="s1">) {</span>
+        <span class="s4">throw </span><span class="s1">InvalidBattCapacity</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">if </span><span class="s1">(cmpZero(kEnergyUseKwhPerMile</span><span class="s4">, </span><span class="s5">0.0</span><span class="s1">)) {</span>
+        <span class="s4">throw </span><span class="s1">InvalidEnergyUse</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">if </span><span class="s1">(kMaxPassengers == </span><span class="s5">0</span><span class="s1">) {</span>
+        <span class="s4">throw </span><span class="s1">InvalidNumPassangers</span><span class="s4">;</span>
+    <span class="s1">}</span>
+
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Diplay evtol properites.</span>
+<span class="s4">void </span><span class="s1">evtol_prop::disp(</span><span class="s4">void</span><span class="s1">) {</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;evol properties:&quot; </span><span class="s1">&lt;&lt; kName</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">cruise speed: &quot; </span><span class="s1">&lt;&lt; kCruiseSpeedMph</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">bat kwh: &quot; </span><span class="s1">&lt;&lt; kBattKwh</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">time to charge hrs: &quot; </span><span class="s1">&lt;&lt; kTimeToChargeHrs</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">energy use kwh/mile: &quot; </span><span class="s1">&lt;&lt; kEnergyUseKwhPerMile</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">max passengers: &quot; </span><span class="s1">&lt;&lt; kMaxPassengers</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">fault probability per hour: &quot; </span><span class="s1">&lt;&lt; kFaultProbPerHour</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">max distance: &quot; </span><span class="s1">&lt;&lt; kMaxDistance</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n </span><span class="s3">max cruise hrs: &quot; </span><span class="s1">&lt;&lt; kMaxCruiseHrs</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Construct a list of evtol companies that is addressable by an enum.</span>
+<span class="s1">evtol_list::evtol_list()</span>
+        <span class="s1">: alpha(</span><span class="s3">&quot;ALPHA&quot;</span><span class="s4">, </span><span class="s5">120</span><span class="s4">, </span><span class="s5">320</span><span class="s4">, </span><span class="s5">.6</span><span class="s4">, </span><span class="s5">1.6</span><span class="s4">, </span><span class="s5">4</span><span class="s4">, </span><span class="s5">0.25</span><span class="s1">)</span><span class="s4">,</span>
+          <span class="s1">bravo(</span><span class="s3">&quot;BRAVO&quot;</span><span class="s4">, </span><span class="s5">100</span><span class="s4">, </span><span class="s5">100</span><span class="s4">, </span><span class="s5">.2</span><span class="s4">, </span><span class="s5">1.5</span><span class="s4">, </span><span class="s5">5</span><span class="s4">, </span><span class="s5">0.1</span><span class="s1">)</span><span class="s4">,</span>
+          <span class="s1">charlie(</span><span class="s3">&quot;CHARLIE&quot;</span><span class="s4">, </span><span class="s5">160</span><span class="s4">, </span><span class="s5">220</span><span class="s4">, </span><span class="s5">.8</span><span class="s4">, </span><span class="s5">2.2</span><span class="s4">, </span><span class="s5">3</span><span class="s4">, </span><span class="s5">0.05</span><span class="s1">)</span><span class="s4">,</span>
+          <span class="s1">delta(</span><span class="s3">&quot;DELTA&quot;</span><span class="s4">, </span><span class="s5">90</span><span class="s4">, </span><span class="s5">120</span><span class="s4">, </span><span class="s5">.62</span><span class="s4">, </span><span class="s5">.8</span><span class="s4">, </span><span class="s5">2</span><span class="s4">, </span><span class="s5">0.22</span><span class="s1">)</span><span class="s4">,</span>
+          <span class="s1">echo(</span><span class="s3">&quot;ECHO&quot;</span><span class="s4">, </span><span class="s5">30</span><span class="s4">, </span><span class="s5">150</span><span class="s4">, </span><span class="s5">.3</span><span class="s4">, </span><span class="s5">5.8</span><span class="s4">, </span><span class="s5">2</span><span class="s4">, </span><span class="s5">0.61</span><span class="s1">)</span><span class="s4">,</span>
+          <span class="s1">lst{&amp;alpha</span><span class="s4">, </span><span class="s1">&amp;bravo</span><span class="s4">, </span><span class="s1">&amp;charlie</span><span class="s4">, </span><span class="s1">&amp;delta</span><span class="s4">, </span><span class="s1">&amp;echo}</span>
+<span class="s1">{</span>
+    <span class="s1">maxPassCnt = </span><span class="s5">0</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; C_NUM_COMPANIES</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">if </span><span class="s1">(lst[i]-&gt;kMaxPassengers &gt; maxPassCnt)</span>
+        <span class="s1">{</span>
+            <span class="s1">maxPassCnt = lst[i]-&gt;kMaxPassengers</span><span class="s4">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Test that enum indexing is working.</span>
+<span class="s4">void </span><span class="s1">evtol_list::unitTest( </span><span class="s4">void </span><span class="s1">)</span>
+<span class="s1">{</span>
+    <span class="s1">assert( getCompanyProperty(C_ALPHA)-&gt;kName == alpha.kName )</span><span class="s4">;</span>
+    <span class="s1">assert( getCompanyProperty(C_ALPHA)-&gt;kName == </span><span class="s3">&quot;ALPHA&quot; </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( getCompanyProperty(C_BRAVO)-&gt;kName == </span><span class="s3">&quot;BRAVO&quot; </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( getCompanyProperty(C_CHARLIE)-&gt;kName == </span><span class="s3">&quot;CHARLIE&quot; </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( getCompanyProperty(C_DELTA)-&gt;kName == </span><span class="s3">&quot;DELTA&quot; </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( getCompanyProperty(C_ECHO)-&gt;kName == </span><span class="s3">&quot;ECHO&quot; </span><span class="s1">)</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief A function to access the company propeties by enum.</span>
+<span class="s0">/// \param company</span>
+<span class="s0">/// \return</span>
+<span class="s1">evtol_prop * evtol_list::getCompanyProperty( evtol_companies_e company )</span>
+<span class="s1">{</span>
+  <span class="s4">return </span><span class="s1">lst[ company ]</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Return the energy usuage at cruise on a per minute basis.</span>
+<span class="s0">/// \param company</span>
+<span class="s0">/// \return</span>
+<span class="s4">double </span><span class="s1">evtol_list::getCruiseMinEnergy( evtol_companies_e company )</span>
+<span class="s1">{</span>
+    <span class="s4">double </span><span class="s1">RV</span><span class="s4">;</span>
+
+    <span class="s1">RV = getCruiseMinDistance( company ) * lst[ company ]-&gt;kEnergyUseKwhPerMile</span><span class="s4">;</span>
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Return the energy charge capability on a per minute basis.</span>
+<span class="s0">/// \param company</span>
+<span class="s0">/// \return</span>
+<span class="s4">double </span><span class="s1">evtol_list::getChargeMinEnergy( evtol_companies_e company )</span>
+<span class="s1">{</span>
+    <span class="s4">double </span><span class="s1">timeToChargeMins = lst[ company ]-&gt;kTimeToChargeHrs * </span><span class="s5">60</span><span class="s4">;</span>
+    <span class="s4">double </span><span class="s1">RV = (lst[ company ]-&gt;kBattKwh / timeToChargeMins)</span><span class="s4">;</span>
+
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Get the distance at cruise speed for a per minute basis.</span>
+<span class="s0">/// \param company</span>
+<span class="s0">/// \return</span>
+<span class="s4">double </span><span class="s1">evtol_list::getCruiseMinDistance( evtol_companies_e company )</span>
+<span class="s1">{</span>
+    <span class="s4">double </span><span class="s1">RV = (</span><span class="s4">double</span><span class="s1">)lst[ company ]-&gt;kCruiseSpeedMph / </span><span class="s5">60</span><span class="s4">;</span>
+
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Get a random passenger count based on the maximum pass count of company types.</span>
+<span class="s0">/// \return</span>
+<span class="s1">uint16_t evtol_list::getRndVehPassCnt( </span><span class="s4">void </span><span class="s1">)</span>
+<span class="s1">{</span>
+    <span class="s1">uint16_t RV = (rand() % (maxPassCnt - </span><span class="s5">1</span><span class="s1">)) + </span><span class="s5">1</span><span class="s4">;</span><span class="s0">// At least one.</span>
+
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Display the evtol properies of all companies.</span>
+<span class="s4">void </span><span class="s1">evtol_list::disp(</span><span class="s4">void</span><span class="s1">) {</span>
+    <span class="s4">for </span><span class="s1">(uint8_t i = </span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; C_NUM_COMPANIES</span><span class="s4">; </span><span class="s1">i++) {</span>
+        <span class="s1">lst[i]-&gt;disp()</span><span class="s4">;</span>
+    <span class="s1">}</span>
+<span class="s1">}</span></pre>
+</body>
+</html>

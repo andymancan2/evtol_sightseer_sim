@@ -1,0 +1,553 @@
+<html>
+<head>
+<title>vehicle.cpp</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bbb529;}
+.s3 { color: #6a8759;}
+.s4 { color: #cc7832;}
+.s5 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+vehicle.cpp</font>
+</center></td></tr></table>
+<pre><span class="s0">//</span>
+<span class="s0">// Created by ajlou on 2/12/2023.</span>
+<span class="s0">//</span>
+
+<span class="s2">#include </span><span class="s3">&quot;vehicle.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&quot;util.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&lt;iostream&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;cassert&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;algorithm&gt;</span>
+
+<span class="s4">using namespace </span><span class="s1">std</span><span class="s4">;</span>
+
+<span class="s0">// Global variables</span>
+<span class="s1">evtol_list evtolLst</span><span class="s4">;</span>
+<span class="s2">#undef </span><span class="s1">vstype</span>
+<span class="s2">#define </span><span class="s1">vstype(x) #x</span>
+<span class="s4">static const char </span><span class="s1">*strVehStates[] = { VEHICLE_STATES }</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Construct a vehicle based on a company enum.</span>
+<span class="s0">/// \param company</span>
+<span class="s1">vehicle::vehicle( evtol_companies_e company )</span>
+    <span class="s1">: kCompany( company )</span><span class="s4">,</span>
+    <span class="s1">currentState( VS_IDLE )</span><span class="s4">,</span>
+    <span class="s1">totFaultCount( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">,</span>
+    <span class="s1">numFlights( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">,</span>
+    <span class="s1">numCharges( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">,</span>
+    <span class="s1">totFlightTime( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">,</span>
+    <span class="s1">totChargeTime( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">,</span>
+    <span class="s1">totDistance( </span><span class="s5">0.0 </span><span class="s1">)</span><span class="s4">,</span>
+    <span class="s1">missionPassCnt( </span><span class="s5">0 </span><span class="s1">)</span>
+<span class="s1">{</span>
+    <span class="s1">missionChargeTime = </span><span class="s5">0</span><span class="s4">;</span>
+    <span class="s1">missionFlightTime = </span><span class="s5">0</span><span class="s4">;</span>
+    <span class="s1">missionDistance = </span><span class="s5">0.0</span><span class="s4">;</span>
+    <span class="s1">missionFaultCount = </span><span class="s5">0</span><span class="s4">;</span>
+    <span class="s1">totPassMiles = </span><span class="s5">0.0</span><span class="s4">;</span>
+
+    <span class="s1">batteryCapacity = evtolLst.getCompanyProperty( kCompany )-&gt;kBattKwh</span><span class="s4">;</span>
+
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Return the current state.</span>
+<span class="s0">/// \return</span>
+<span class="s1">vehicle_state_e vehicle::getCurrentState( )</span>
+<span class="s1">{</span>
+    <span class="s4">return </span><span class="s1">currentState</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Simulate the vehicle based on a 1 minute interval.</span>
+<span class="s0">/// \return Return actions that may lead this vehicle being transferred to another queue.</span>
+<span class="s1">sim_result_e vehicle::sim( )</span>
+<span class="s1">{</span>
+    <span class="s1">sim_result_e RV = NO_CHANGE</span><span class="s4">;</span>
+    <span class="s1">vehicle_state_e nextState = currentState</span><span class="s4">;</span>
+
+    <span class="s4">switch </span><span class="s1">(currentState)</span>
+    <span class="s1">{</span>
+        <span class="s4">case </span><span class="s1">VS_IDLE:</span>
+            <span class="s4">break;</span>
+        <span class="s4">case </span><span class="s1">VS_IN_FLIGHT:</span>
+            <span class="s1">missionFlightTime++</span><span class="s4">;</span>
+            <span class="s1">missionDistance += evtolLst.getCruiseMinDistance( kCompany )</span><span class="s4">;</span>
+            <span class="s4">if </span><span class="s1">(rand() &lt; (( evtolLst.getCompanyProperty(kCompany)-&gt;kFaultProbPerHour * RAND_MAX ) / </span><span class="s5">60</span><span class="s1">))</span>
+            <span class="s1">{</span>
+                <span class="s1">missionFaultCount++</span><span class="s4">;</span>
+            <span class="s1">}</span>
+            <span class="s1">batteryCapacity -= evtolLst.getCruiseMinEnergy( kCompany )</span><span class="s4">;</span>
+            <span class="s0">//if (cmpd(batteryCapacity, 0.0, evtolLst.getCruiseMinEnergy( kCompany )))</span>
+            <span class="s4">if </span><span class="s1">(cmpLessOrEqual(batteryCapacity</span><span class="s4">, </span><span class="s1">evtolLst.getCruiseMinEnergy( kCompany )))</span>
+            <span class="s1">{</span>
+                <span class="s1">batteryCapacity = </span><span class="s5">0.0</span><span class="s4">;</span>
+                <span class="s1">nextState = VS_WAIT_CHARGE</span><span class="s4">;</span>
+                <span class="s1">RV = FLIGHT_COMPLETE</span><span class="s4">;</span>
+                <span class="s1">totPassMiles += (missionDistance * missionPassCnt)</span><span class="s4">;</span>
+                <span class="s1">missionPassCnt = </span><span class="s5">0</span><span class="s4">;</span>
+                <span class="s1">numFlights++</span><span class="s4">;</span>
+                <span class="s1">totFlightTime += missionFlightTime</span><span class="s4">;</span>
+                <span class="s1">missionFlightTime = </span><span class="s5">0</span><span class="s4">;</span>
+                <span class="s1">totDistance += missionDistance</span><span class="s4">;</span>
+                <span class="s1">missionDistance = </span><span class="s5">0</span><span class="s4">;</span>
+                <span class="s1">totFaultCount += missionFaultCount</span><span class="s4">;</span>
+                <span class="s1">missionFaultCount = </span><span class="s5">0</span><span class="s4">;</span>
+            <span class="s1">}</span>
+            <span class="s4">else</span>
+            <span class="s1">{</span>
+                <span class="s0">//batteryCapacity -= evtolLst.getCruiseMinEnergy( kCompany );</span>
+            <span class="s1">}</span>
+            <span class="s4">break;</span>
+        <span class="s4">case </span><span class="s1">VS_WAIT_CHARGE:</span>
+            <span class="s4">break;</span>
+        <span class="s4">case </span><span class="s1">VS_IN_CHARGE:</span>
+            <span class="s1">missionChargeTime++</span><span class="s4">;</span>
+            <span class="s4">if </span><span class="s1">(cmpGreaterOrEqual(batteryCapacity</span><span class="s4">,</span>
+                    <span class="s1">evtolLst.getCompanyProperty( kCompany )-&gt;kBattKwh))</span>
+            <span class="s1">{</span>
+                <span class="s1">batteryCapacity = evtolLst.getCompanyProperty( kCompany )-&gt;kBattKwh</span><span class="s4">;</span>
+                <span class="s1">nextState = VS_IDLE</span><span class="s4">;</span>
+                <span class="s1">RV = CHARGE_COMOPLETE</span><span class="s4">;</span>
+                <span class="s1">totChargeTime += missionChargeTime</span><span class="s4">;</span>
+                <span class="s1">missionChargeTime = </span><span class="s5">0</span><span class="s4">;</span>
+                <span class="s1">numCharges++</span><span class="s4">;</span>
+            <span class="s1">}</span>
+            <span class="s4">else</span>
+            <span class="s1">{</span>
+                <span class="s1">batteryCapacity += evtolLst.getChargeMinEnergy( kCompany )</span><span class="s4">;</span>
+            <span class="s1">}</span>
+            <span class="s4">break;</span>
+        <span class="s4">default</span><span class="s1">:</span>
+            <span class="s1">assert( </span><span class="s5">1 </span><span class="s1">)</span><span class="s4">;</span><span class="s0">//Should not reach here.</span>
+            <span class="s4">break;</span>
+    <span class="s1">}</span>
+    <span class="s1">currentState = nextState</span><span class="s4">;</span>
+
+
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Start a in_flight state.</span>
+<span class="s0">/// \param numPass</span>
+<span class="s4">void </span><span class="s1">vehicle::startFlight( uint16_t numPass )</span>
+<span class="s1">{</span>
+    <span class="s1">currentState = VS_IN_FLIGHT</span><span class="s4">;</span>
+    <span class="s1">missionPassCnt = numPass</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Start a charging state.</span>
+<span class="s4">void </span><span class="s1">vehicle::startCharging( )</span>
+<span class="s1">{</span>
+    <span class="s1">currentState = VS_IN_CHARGE</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Return a string for this vehicles state used in a log entry.</span>
+<span class="s0">/// \return</span>
+<span class="s1">string vehicle::logEntry( )</span>
+<span class="s1">{</span>
+    <span class="s1">string s</span><span class="s4">;</span>
+
+    <span class="s4">switch </span><span class="s1">(currentState)</span>
+    <span class="s1">{</span>
+        <span class="s4">case </span><span class="s1">VS_IDLE:</span>
+            <span class="s1">s = (string)strVehStates[currentState] + </span><span class="s3">&quot;-&quot; </span><span class="s1">+ (string)getCompanyName( kCompany )</span><span class="s4">;</span>
+            <span class="s4">break;</span>
+        <span class="s4">case </span><span class="s1">VS_IN_FLIGHT:</span>
+            <span class="s1">s = (string)strVehStates[currentState] + </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">+ to_string( missionPassCnt ) + </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">+ to_string(missionFlightTime)</span><span class="s4">;</span>
+            <span class="s4">break;</span>
+        <span class="s4">case </span><span class="s1">VS_WAIT_CHARGE:</span>
+            <span class="s1">s = (string)strVehStates[currentState] + </span><span class="s3">&quot;-&quot; </span><span class="s1">+ (string)getCompanyName( kCompany )</span><span class="s4">;</span>
+            <span class="s4">break;</span>
+        <span class="s4">case </span><span class="s1">VS_IN_CHARGE:</span>
+            <span class="s1">s = (string)strVehStates[currentState] + </span><span class="s3">&quot;-&quot;</span>
+                <span class="s1">+ to_string( missionChargeTime )</span><span class="s4">;</span>
+            <span class="s4">break;</span>
+    <span class="s1">}</span>
+    <span class="s4">return </span><span class="s1">s</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Display this vehicle.</span>
+<span class="s4">void </span><span class="s1">vehicle::disp( )</span>
+<span class="s1">{</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;company: &quot; </span><span class="s1">&lt;&lt; kCompany &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;   battery: &quot; </span><span class="s1">&lt;&lt; batteryCapacity &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;      minute cruise energy: &quot; </span><span class="s1">&lt;&lt; evtolLst.getCruiseMinEnergy( kCompany ) &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;      minute charge energy: &quot; </span><span class="s1">&lt;&lt; evtolLst.getChargeMinEnergy( kCompany ) &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;   numFlights: &quot; </span><span class="s1">&lt;&lt; numFlights &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;      totFlightTime: &quot; </span><span class="s1">&lt;&lt; totFlightTime &lt;&lt; </span><span class="s3">&quot;, missionFlightTime:&quot; </span><span class="s1">&lt;&lt; missionFlightTime &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;      totDistance: &quot; </span><span class="s1">&lt;&lt; totDistance &lt;&lt; </span><span class="s3">&quot;, missionDistance: &quot; </span><span class="s1">&lt;&lt; missionDistance &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;      totFaultCount: &quot; </span><span class="s1">&lt;&lt; totFaultCount &lt;&lt; </span><span class="s3">&quot;, missionFaultCount: &quot; </span><span class="s1">&lt;&lt; missionFaultCount &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;   numCharges: &quot; </span><span class="s1">&lt;&lt; numCharges &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;      totChargeTime: &quot; </span><span class="s1">&lt;&lt; totChargeTime &lt;&lt; </span><span class="s3">&quot;, missionChargeTime: &quot; </span><span class="s1">&lt;&lt; missionChargeTime &lt;&lt; endl</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Display statistics for this vehicle.</span>
+<span class="s0">//Keep track of the following statistics per vehicle type:</span>
+<span class="s0">//- average flight time per flight</span>
+<span class="s0">//   NOTE: For flight safety, a flight may end 1-minute early to due to 1 minute rounding errors.</span>
+<span class="s0">//- average distance traveled per flight</span>
+<span class="s0">//- average time charging per charge session</span>
+<span class="s0">//   NOTE: For flight safety, a vehicle may charge an extra minute due to 1 minute rounding errors.</span>
+<span class="s0">//- total number of faults</span>
+<span class="s0">//- total number of passenger miles.</span>
+<span class="s0">//NOTE: A partial flight or partial charge cycle is not incorporated</span>
+<span class="s0">//      into the statistics when the simulation stops.</span>
+<span class="s4">void </span><span class="s1">vehicle::displayStatistics( string s )</span>
+<span class="s1">{</span>
+    <span class="s1">string flightTimePerFlight</span><span class="s4">;</span>
+    <span class="s1">string distancePerFlight</span><span class="s4">;</span>
+    <span class="s1">string timeChargingPerSession</span><span class="s4">;</span>
+    <span class="s4">if </span><span class="s1">(numFlights &gt; </span><span class="s5">0</span><span class="s1">)</span>
+    <span class="s1">{</span>
+        <span class="s1">flightTimePerFlight = to_string((</span><span class="s4">double</span><span class="s1">)totFlightTime / numFlights )</span><span class="s4">;</span>
+        <span class="s1">distancePerFlight = to_string( totDistance / numFlights )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">else</span>
+    <span class="s1">{</span>
+        <span class="s1">flightTimePerFlight = </span><span class="s3">&quot;No flights were found.&quot;</span><span class="s4">;</span>
+        <span class="s1">distancePerFlight = </span><span class="s3">&quot;No flights were found.&quot;</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">if </span><span class="s1">(numCharges &gt; </span><span class="s5">0</span><span class="s1">)</span>
+    <span class="s1">{</span>
+        <span class="s1">timeChargingPerSession = to_string( (</span><span class="s4">double</span><span class="s1">)totChargeTime / numCharges )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">else</span>
+    <span class="s1">{</span>
+        <span class="s1">timeChargingPerSession = </span><span class="s3">&quot;No charge cycles were found.&quot;</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;Vehicle: &quot; </span><span class="s1">&lt;&lt; s &lt;&lt; </span><span class="s3">&quot;, Company: &quot; </span><span class="s1">&lt;&lt; getCompanyName( kCompany ) &lt;&lt; </span><span class="s3">&quot;, numFlights: &quot; </span><span class="s1">&lt;&lt; numFlights &lt;&lt; </span><span class="s3">&quot;, numCharges: &quot; </span><span class="s1">&lt;&lt; numCharges &lt;&lt;  endl</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;   Average flight time per flight (minutes) = &quot; </span><span class="s1">&lt;&lt; flightTimePerFlight &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;   Average distance traveled per flight (miles) = &quot; </span><span class="s1">&lt;&lt; distancePerFlight &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;   Average time charging per charge session (minutes) = &quot; </span><span class="s1">&lt;&lt; timeChargingPerSession &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;   Total number of faults = &quot; </span><span class="s1">&lt;&lt; totFaultCount &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;   Total number of passenger miles = &quot; </span><span class="s1">&lt;&lt; totPassMiles &lt;&lt; endl</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+
+<span class="s0">/// \brief Construct the charging stations.</span>
+<span class="s1">charger_stations::charger_stations( )</span>
+<span class="s1">{</span>
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumChargers</span><span class="s4">; </span><span class="s1">i++) {</span>
+        <span class="s1">chargers[i] = kEmptyCharger</span><span class="s4">;</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Destructor for charging station.</span>
+<span class="s1">charger_stations::~charger_stations( )</span>
+<span class="s1">{</span>
+
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Add a vehicle to the charger.</span>
+<span class="s0">/// \param vehID</span>
+<span class="s0">/// \return</span>
+<span class="s4">bool </span><span class="s1">charger_stations::addVehToCharger( uint16_t vehID )</span>
+<span class="s1">{</span>
+    <span class="s4">bool </span><span class="s1">RV = </span><span class="s4">false;</span>
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumChargers</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">if </span><span class="s1">(chargers[i] == kEmptyCharger)</span>
+        <span class="s1">{</span>
+            <span class="s1">chargers[i] = vehID</span><span class="s4">;</span>
+            <span class="s1">RV = </span><span class="s4">true;</span>
+            <span class="s4">break;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Free a vehicle from the charger.</span>
+<span class="s0">/// \param vehID</span>
+<span class="s0">/// \return</span>
+<span class="s4">bool </span><span class="s1">charger_stations::freeVehFromCharger( uint16_t vehID )</span>
+<span class="s1">{</span>
+    <span class="s4">bool </span><span class="s1">RV = </span><span class="s4">false;</span>
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumChargers</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">if </span><span class="s1">(chargers[i] == vehID)</span>
+        <span class="s1">{</span>
+            <span class="s1">chargers[i] = kEmptyCharger</span><span class="s4">;</span>
+            <span class="s1">RV = </span><span class="s4">true;</span>
+            <span class="s4">break;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Get the number of chargers available.</span>
+<span class="s0">/// \return</span>
+<span class="s1">uint16_t  charger_stations::getNumOfChargersAvail( )</span>
+<span class="s1">{</span>
+    <span class="s1">uint16_t numAvail = </span><span class="s5">0</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumChargers</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">if </span><span class="s1">(chargers[i] == kEmptyCharger)</span>
+        <span class="s1">{</span>
+            <span class="s1">numAvail++</span><span class="s4">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s4">return </span><span class="s1">numAvail</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Get the number of chargers in use.</span>
+<span class="s0">/// \return</span>
+<span class="s1">uint16_t  charger_stations::getNumOfChargersInUse( )</span>
+<span class="s1">{</span>
+    <span class="s1">uint16_t numInUse = </span><span class="s5">0</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumChargers</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">if </span><span class="s1">(chargers[i] != kEmptyCharger)</span>
+        <span class="s1">{</span>
+            <span class="s1">numInUse++</span><span class="s4">;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s4">return </span><span class="s1">numInUse</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Construct all the vehicles for a simulation.</span>
+<span class="s0">/// \param seed</span>
+<span class="s1">veh_sim::veh_sim( uint32_t seed )</span>
+    <span class="s1">: seedForRandomVehicleConfiguration( seed )</span><span class="s4">,</span>
+      <span class="s1">seedForStartingSimulation( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">, </span><span class="s0">//Set with simulation method.</span>
+      <span class="s1">log(</span><span class="s3">&quot;simLog.tsv&quot;</span><span class="s4">, </span><span class="s1">std::ofstream::out)</span>
+<span class="s1">{</span>
+    <span class="s1">uint16_t rndVehCntByCompany[ C_NUM_COMPANIES ]</span><span class="s4">;</span>
+    <span class="s1">uint16_t rndVehiclesLeftCnt = kNumSimVehicles</span><span class="s4">;</span>
+    <span class="s1">uint16_t company</span><span class="s4">;</span>
+
+    <span class="s1">srand( seed )</span><span class="s4">;</span>
+    <span class="s0">//TODO: Combine next two loops into one, but now nice for random distribution review.</span>
+    <span class="s4">for </span><span class="s1">(company=C_ALPHA</span><span class="s4">; </span><span class="s1">company &lt; (C_NUM_COMPANIES-</span><span class="s5">1</span><span class="s1">)</span><span class="s4">; </span><span class="s1">company++)</span>
+    <span class="s1">{</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;  company = &quot; </span><span class="s1">&lt;&lt; company &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s1">rndVehCntByCompany[ company ] = ((( rand() % rndVehiclesLeftCnt ) / (C_NUM_COMPANIES - company - </span><span class="s5">1</span><span class="s1">) ) + </span><span class="s5">1</span><span class="s1">)</span><span class="s4">;</span>
+        <span class="s1">rndVehiclesLeftCnt -= rndVehCntByCompany[ company ]</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;    rndVehiclesLeftCnt = &quot; </span><span class="s1">&lt;&lt; rndVehiclesLeftCnt &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s1">rndVehCntByCompany[ (C_NUM_COMPANIES-</span><span class="s5">1</span><span class="s1">) ] = rndVehiclesLeftCnt</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;rndVehCntByCompany: &quot; </span><span class="s1">&lt;&lt; rndVehCntByCompany[</span><span class="s5">0</span><span class="s1">]</span>
+        <span class="s1">&lt;&lt; </span><span class="s3">&quot;, &quot; </span><span class="s1">&lt;&lt; rndVehCntByCompany[</span><span class="s5">1</span><span class="s1">]</span>
+        <span class="s1">&lt;&lt; </span><span class="s3">&quot;, &quot; </span><span class="s1">&lt;&lt; rndVehCntByCompany[</span><span class="s5">2</span><span class="s1">]</span>
+        <span class="s1">&lt;&lt; </span><span class="s3">&quot;, &quot; </span><span class="s1">&lt;&lt; rndVehCntByCompany[</span><span class="s5">3</span><span class="s1">]</span>
+        <span class="s1">&lt;&lt; </span><span class="s3">&quot;, &quot; </span><span class="s1">&lt;&lt; rndVehCntByCompany[</span><span class="s5">4</span><span class="s1">]</span>
+        <span class="s1">&lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;v size = &quot; </span><span class="s1">&lt;&lt; v.size() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+    <span class="s4">for </span><span class="s1">(company=C_ALPHA</span><span class="s4">; </span><span class="s1">company &lt; (C_NUM_COMPANIES)</span><span class="s4">; </span><span class="s1">company++)</span>
+    <span class="s1">{</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;  company = &quot; </span><span class="s1">&lt;&lt; company &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;    rndVehCntByCompany[ company ] = &quot; </span><span class="s1">&lt;&lt; rndVehCntByCompany[ company ] &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; rndVehCntByCompany[ company ]</span><span class="s4">; </span><span class="s1">i++ )</span>
+        <span class="s1">{</span>
+            <span class="s1">v.push_back(  vehicle( (evtol_companies_e)company )  )</span><span class="s4">;</span>
+        <span class="s1">}</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;    v size = &quot; </span><span class="s1">&lt;&lt; v.size() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;v size = &quot; </span><span class="s1">&lt;&lt; v.size() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+    <span class="s1">assert( v.size() == kNumSimVehicles )</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumSimVehicles</span><span class="s4">; </span><span class="s1">i++ )</span>
+    <span class="s1">{</span>
+        <span class="s1">idleVs.push_back( i )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">addLogHeader()</span><span class="s4">;</span>
+    <span class="s1">addLogRow( </span><span class="s5">0 </span><span class="s1">)</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Add log header information.</span>
+<span class="s4">void </span><span class="s1">veh_sim::addLogHeader( )</span>
+<span class="s1">{</span>
+    <span class="s0">//log.open(&quot;simLog.tsv&quot;, std::ofstream::out);</span>
+    <span class="s1">log &lt;&lt; </span><span class="s3">&quot;TmMin</span><span class="s4">\t</span><span class="s3">IdleSz</span><span class="s4">\t</span><span class="s3">NeedChgQSz</span><span class="s4">\t</span><span class="s3">mssnQSz</span><span class="s4">\t</span><span class="s3">NumChg</span><span class="s4">\t</span><span class="s3">&quot;</span><span class="s1">\ 
+            </span><span class="s3">&quot;V0</span><span class="s4">\t</span><span class="s3">V1</span><span class="s4">\t</span><span class="s3">V2</span><span class="s4">\t</span><span class="s3">V3</span><span class="s4">\t</span><span class="s3">V4</span><span class="s4">\t</span><span class="s3">V5</span><span class="s4">\t</span><span class="s3">V6</span><span class="s4">\t</span><span class="s3">V7</span><span class="s4">\t</span><span class="s3">V8</span><span class="s4">\t</span><span class="s3">V9</span><span class="s4">\t</span><span class="s3">&quot;</span><span class="s1">\ 
+            </span><span class="s3">&quot;V10</span><span class="s4">\t</span><span class="s3">V11</span><span class="s4">\t</span><span class="s3">V12</span><span class="s4">\t</span><span class="s3">V13</span><span class="s4">\t</span><span class="s3">V14</span><span class="s4">\t</span><span class="s3">V15</span><span class="s4">\t</span><span class="s3">V16</span><span class="s4">\t</span><span class="s3">V17</span><span class="s4">\t</span><span class="s3">V18</span><span class="s4">\t</span><span class="s3">V19</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Add a row of data to the log file.</span>
+<span class="s0">/// \param simMin</span>
+<span class="s4">void </span><span class="s1">veh_sim::addLogRow( uint16_t simMin )</span>
+<span class="s1">{</span>
+    <span class="s1">log &lt;&lt; simMin &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; idleVs.size() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; needChargingQ.size() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot;</span>
+        <span class="s1">&lt;&lt; missionQ.size() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; chargerStations.getNumOfChargersAvail() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot;</span>
+        <span class="s1">&lt;&lt; v[</span><span class="s5">0</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">1</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">2</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">3</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">4</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot;</span>
+        <span class="s1">&lt;&lt; v[</span><span class="s5">5</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">6</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">7</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">8</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">9</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot;</span>
+        <span class="s1">&lt;&lt; v[</span><span class="s5">10</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">11</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">12</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">13</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">14</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot;</span>
+        <span class="s1">&lt;&lt; v[</span><span class="s5">15</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">16</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">17</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">18</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot; </span><span class="s1">&lt;&lt; v[</span><span class="s5">19</span><span class="s1">].logEntry() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\t</span><span class="s3">&quot;</span>
+        <span class="s1">&lt;&lt; endl</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Find a mission cable vehicle in the idle list that meets the minimum passenger capacity.</span>
+<span class="s0">/// \param vehIDVect</span>
+<span class="s0">/// \param mission</span>
+<span class="s0">/// \return</span>
+<span class="s1">uint16_t veh_sim::findMissionCableVeh( vector&lt;uint16_t&gt; vehIDVect</span><span class="s4">, </span><span class="s1">uint16_t mission )</span>
+<span class="s1">{</span>
+    <span class="s1">uint16_t RV = kInvalidVeh</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; vehIDVect.size()</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">if </span><span class="s1">(evtolLst.getCompanyProperty( v[vehIDVect[i]].kCompany )-&gt;kMaxPassengers &gt; mission)</span>
+        <span class="s1">{</span>
+            <span class="s4">if </span><span class="s1">((RV == kInvalidVeh) ||</span>
+                <span class="s1">(evtolLst.getCompanyProperty( v[vehIDVect[i]].kCompany )-&gt;kMaxPassengers</span>
+                 <span class="s1">&lt; evtolLst.getCompanyProperty( v[RV].kCompany )-&gt;kMaxPassengers ))</span>
+            <span class="s1">{</span>
+                <span class="s1">RV = i</span><span class="s4">;</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s4">return </span><span class="s1">RV</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Currently does nothing.</span>
+<span class="s0">/// \param numChargersAvail</span>
+<span class="s4">void </span><span class="s1">veh_sim::reorderChargerWaitingQForNextMissions( uint16_t numChargersAvail )</span>
+<span class="s1">{</span>
+    <span class="s0">// TODO: Make the top of the charge waiting queue have the best vehicle based</span>
+    <span class="s0">//       on what is in the missions.  Consider what vehicles are idle and</span>
+    <span class="s0">//       what is currently charging.</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Simulate one minute.</span>
+<span class="s4">void </span><span class="s1">veh_sim::simMinute( )</span>
+<span class="s1">{</span>
+
+    <span class="s0">// Queue up a backlog of missions(flights) to the depth of simulated vehicles.</span>
+    <span class="s4">if </span><span class="s1">(missionQ.size() &lt; kNumSimVehicles)</span>
+    <span class="s1">{</span>
+        <span class="s1">missionQ.push_back( evtolLst.getRndVehPassCnt() )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+
+    <span class="s0">// Update each vehicle's simulation.</span>
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumSimVehicles</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s4">switch </span><span class="s1">(v[i].sim())</span>
+        <span class="s1">{</span>
+            <span class="s4">case </span><span class="s1">NO_CHANGE:</span>
+                <span class="s4">break;</span>
+            <span class="s4">case </span><span class="s1">FLIGHT_COMPLETE:</span>
+                <span class="s1">needChargingQ.push_back( i )</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+            <span class="s4">case </span><span class="s1">CHARGE_COMOPLETE:</span>
+                <span class="s1">idleVs.push_back( i )</span><span class="s4">;</span>
+                <span class="s1">chargerStations.freeVehFromCharger( i )</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+            <span class="s4">default</span><span class="s1">:</span>
+                <span class="s1">assert(</span><span class="s5">1</span><span class="s1">)</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s0">// Start a single mission.</span>
+    <span class="s4">if </span><span class="s1">(idleVs.size() &gt; </span><span class="s5">0</span><span class="s1">) {</span>
+        <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; missionQ.size()</span><span class="s4">; </span><span class="s1">i++) {</span>
+            <span class="s1">uint16_t idleVehFound = findMissionCableVeh( idleVs</span><span class="s4">, </span><span class="s1">missionQ[i] )</span><span class="s4">;</span>
+            <span class="s4">if </span><span class="s1">(idleVehFound != kInvalidVeh) {</span>
+                <span class="s1">uint16_t vehID = idleVs[idleVehFound]</span><span class="s4">;</span>
+                <span class="s1">uint16_t numPass = missionQ[i]</span><span class="s4">;</span>
+                <span class="s1">missionQ.erase( missionQ.begin() + i )</span><span class="s4">;</span>
+                <span class="s1">idleVs.erase(idleVs.begin() + idleVehFound)</span><span class="s4">;</span>
+                <span class="s1">v[vehID].startFlight(numPass)</span><span class="s4">;</span>
+                <span class="s4">break;</span><span class="s0">// Only start one mission per minute, thus break.</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s0">// Add vehicles to the charger.</span>
+    <span class="s1">uint16_t numChargersAvail = chargerStations.getNumOfChargersAvail()</span><span class="s4">;</span>
+    <span class="s4">if </span><span class="s1">(numChargersAvail &gt; </span><span class="s5">0</span><span class="s1">) {</span>
+        <span class="s1">reorderChargerWaitingQForNextMissions( numChargersAvail )</span><span class="s4">;</span>
+        <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; numChargersAvail</span><span class="s4">; </span><span class="s1">i++) {</span>
+            <span class="s4">if </span><span class="s1">(needChargingQ.size() &gt; </span><span class="s5">0</span><span class="s1">)</span>
+            <span class="s1">{</span>
+                <span class="s1">uint16_t vehID = needChargingQ[</span><span class="s5">0</span><span class="s1">]</span><span class="s4">;</span>
+                <span class="s1">needChargingQ.erase(needChargingQ.begin() )</span><span class="s4">;</span>
+                <span class="s1">chargerStations.addVehToCharger( vehID )</span><span class="s4">;</span>
+                <span class="s1">v[ vehID ].startCharging()</span><span class="s4">;</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Simulate a number of minutes passed in.</span>
+<span class="s0">/// \param simMinutes</span>
+<span class="s0">/// \param seed Another seed independent of veh configuration seed to randomize missions on # of passengers.</span>
+<span class="s4">void </span><span class="s1">veh_sim::simulate( uint16_t simMinutes</span><span class="s4">, </span><span class="s1">uint32_t seed )</span>
+<span class="s1">{</span>
+    <span class="s1">seedForStartingSimulation = seed</span><span class="s4">;</span>
+    <span class="s1">srand( seed )</span><span class="s4">;</span>
+    <span class="s1">checkSimConsistency()</span><span class="s4">;</span>
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; simMinutes</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s1">simMinute()</span><span class="s4">;</span>
+        <span class="s1">addLogRow( i )</span><span class="s4">;</span>
+        <span class="s1">checkSimConsistency()</span><span class="s4">;</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief</span>
+<span class="s1">veh_sim::~veh_sim()</span>
+<span class="s1">{</span>
+    <span class="s1">log.close()</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Throws an assert if the simulation lists are inconsistent.</span>
+<span class="s4">void </span><span class="s1">veh_sim::checkSimConsistency( )</span>
+<span class="s1">{</span>
+    <span class="s1">uint16_t idleCnt=</span><span class="s5">0</span><span class="s4">, </span><span class="s1">inFlightCnt=</span><span class="s5">0</span><span class="s4">, </span><span class="s1">waitChargeCnt=</span><span class="s5">0</span><span class="s4">, </span><span class="s1">inChargeCnt=</span><span class="s5">0</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumSimVehicles</span><span class="s4">; </span><span class="s1">i++) {</span>
+        <span class="s4">switch </span><span class="s1">(v[i].getCurrentState()) {</span>
+            <span class="s4">case </span><span class="s1">VS_IDLE:</span>
+                <span class="s1">idleCnt++</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+            <span class="s4">case </span><span class="s1">VS_IN_FLIGHT:</span>
+                <span class="s1">inFlightCnt++</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+            <span class="s4">case </span><span class="s1">VS_WAIT_CHARGE:</span>
+                <span class="s1">waitChargeCnt++</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+            <span class="s4">case </span><span class="s1">VS_IN_CHARGE:</span>
+                <span class="s1">inChargeCnt++</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+            <span class="s4">default</span><span class="s1">:</span>
+                <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;Bad vehicle sim state: &quot; </span><span class="s1">&lt;&lt; v[i].getCurrentState() &lt;&lt; </span><span class="s3">&quot;  idx =&quot; </span><span class="s1">&lt;&lt; i &lt;&lt; endl</span><span class="s4">;</span>
+                <span class="s1">assert(</span><span class="s5">1</span><span class="s1">)</span><span class="s4">;</span>
+                <span class="s4">break;</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+    <span class="s0">//cout &lt;&lt; &quot;idleVs.sz: &quot; &lt;&lt; idleVs.size() &lt;&lt; &quot; idleCnt: &quot; &lt;&lt; idleCnt &lt;&lt; endl;</span>
+    <span class="s0">//cout &lt;&lt; &quot;needChargingQ.sz: &quot; &lt;&lt; needChargingQ.size() &lt;&lt; &quot; waitChargeCnt: &quot; &lt;&lt; waitChargeCnt &lt;&lt; endl;</span>
+    <span class="s0">//cout &lt;&lt; &quot;chargerStations.sz: &quot; &lt;&lt; chargerStations.getNumOfChargersInUse() &lt;&lt; &quot; inChargeCnt: &quot; &lt;&lt; inChargeCnt &lt;&lt; endl;</span>
+    <span class="s1">assert( idleVs.size() == idleCnt )</span><span class="s4">;</span>
+    <span class="s1">assert( needChargingQ.size() == waitChargeCnt )</span><span class="s4">;</span>
+    <span class="s1">assert( chargerStations.getNumOfChargersInUse() == inChargeCnt )</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Display the requested statistics for this siumulation.</span>
+<span class="s4">void </span><span class="s1">veh_sim::displayVehicleStats( </span><span class="s4">void </span><span class="s1">)</span>
+<span class="s1">{</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;Display vehicle statistics for simulation results.</span><span class="s4">\n</span><span class="s3">&quot;</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;   Random seed used for allocating mix of evotl companies: &quot; </span><span class="s1">&lt;&lt; seedForRandomVehicleConfiguration &lt;&lt; endl</span>
+         <span class="s1">&lt;&lt; </span><span class="s3">&quot;   Random seed used for starting the simulation: &quot; </span><span class="s1">&lt;&lt; seedForStartingSimulation &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s4">for </span><span class="s1">(uint16_t i=</span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; kNumSimVehicles</span><span class="s4">; </span><span class="s1">i++)</span>
+    <span class="s1">{</span>
+        <span class="s1">v[i].displayStatistics( </span><span class="s3">&quot;V&quot; </span><span class="s1">+ to_string(i) )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+
+</pre>
+</body>
+</html>

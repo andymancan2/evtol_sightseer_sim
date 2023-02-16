@@ -1,0 +1,166 @@
+<html>
+<head>
+<title>main.cpp</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #bbb529;}
+.s3 { color: #6a8759;}
+.s4 { color: #cc7832;}
+.s5 { color: #6897bb;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.cpp</font>
+</center></td></tr></table>
+<pre><span class="s0">///</span>
+
+<span class="s2">#include </span><span class="s3">&quot;evtol_prop.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&quot;vehicle.h&quot;</span>
+<span class="s2">#include </span><span class="s3">&lt;iostream&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;assert.h&gt;</span>
+<span class="s2">#include </span><span class="s3">&lt;cmath&gt;</span>
+
+<span class="s4">using namespace </span><span class="s1">std</span><span class="s4">;</span>
+
+<span class="s0">/// \brief Unit tests for evtol_prop class.</span>
+<span class="s4">void </span><span class="s1">evtol_prop_unitTest( )</span>
+<span class="s1">{</span>
+    <span class="s4">try </span><span class="s1">{</span>
+        <span class="s1">evtol_prop tst1( </span><span class="s3">&quot;tst1&quot;</span><span class="s4">, </span><span class="s5">1</span><span class="s4">, </span><span class="s5">2</span><span class="s4">, </span><span class="s5">3</span><span class="s4">, </span><span class="s5">1</span><span class="s4">, </span><span class="s5">0</span><span class="s4">, </span><span class="s5">7</span><span class="s1">)</span><span class="s4">;</span>
+        <span class="s1">assert(</span><span class="s5">0</span><span class="s1">)</span><span class="s4">; </span><span class="s0">// Should not reach here with exception thrown.</span>
+    <span class="s1">} </span><span class="s4">catch</span><span class="s1">( evtol_prop_exc e) {</span>
+        <span class="s1">std::cout &lt;&lt; </span><span class="s3">&quot;Exception caught:&quot; </span><span class="s1">&lt;&lt; e.getEId() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+        <span class="s1">assert( e.getEId() == INVALID_PASSENGER_PARAM )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">try </span><span class="s1">{</span>
+        <span class="s1">evtol_prop tst2(</span><span class="s3">&quot;tst2&quot;</span><span class="s4">, </span><span class="s5">1</span><span class="s4">, </span><span class="s5">2</span><span class="s4">, </span><span class="s5">3</span><span class="s4">, </span><span class="s5">0.0</span><span class="s4">, </span><span class="s5">5</span><span class="s4">, </span><span class="s5">7</span><span class="s1">)</span><span class="s4">;</span>
+        <span class="s1">assert(</span><span class="s5">0</span><span class="s1">)</span><span class="s4">; </span><span class="s0">// Should not reach here with exception thrown.</span>
+    <span class="s1">} </span><span class="s4">catch</span><span class="s1">( evtol_prop_exc e) {</span>
+        <span class="s1">std::cout &lt;&lt; </span><span class="s3">&quot;Exception caught:&quot; </span><span class="s1">&lt;&lt; e.getEId() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+        <span class="s1">assert( e.getEId() == INVALID_ENERGY_USE )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">try </span><span class="s1">{</span>
+        <span class="s1">evtol_prop tst3(</span><span class="s3">&quot;tst3&quot;</span><span class="s4">, </span><span class="s5">0</span><span class="s4">, </span><span class="s5">2</span><span class="s4">, </span><span class="s5">3</span><span class="s4">, </span><span class="s5">1.0</span><span class="s4">, </span><span class="s5">5</span><span class="s4">, </span><span class="s5">7</span><span class="s1">)</span><span class="s4">;</span>
+        <span class="s1">assert(</span><span class="s5">0</span><span class="s1">)</span><span class="s4">; </span><span class="s0">// Should not reach here with exception thrown.</span>
+    <span class="s1">} </span><span class="s4">catch</span><span class="s1">( evtol_prop_exc e) {</span>
+        <span class="s1">std::cout &lt;&lt; </span><span class="s3">&quot;Exception caught:&quot; </span><span class="s1">&lt;&lt; e.getEId() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+        <span class="s1">assert( e.getEId() == INVALID_CRUISE )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s4">try </span><span class="s1">{</span>
+        <span class="s1">evtol_prop tst4(</span><span class="s3">&quot;tst4&quot;</span><span class="s4">, </span><span class="s5">1</span><span class="s4">, </span><span class="s5">0</span><span class="s4">, </span><span class="s5">3</span><span class="s4">, </span><span class="s5">1.0</span><span class="s4">, </span><span class="s5">5</span><span class="s4">, </span><span class="s5">7</span><span class="s1">)</span><span class="s4">;</span>
+        <span class="s1">assert(</span><span class="s5">0</span><span class="s1">)</span><span class="s4">; </span><span class="s0">// Should not reach here with exception thrown.</span>
+    <span class="s1">} </span><span class="s4">catch</span><span class="s1">( evtol_prop_exc e) {</span>
+        <span class="s1">std::cout &lt;&lt; </span><span class="s3">&quot;Exception caught:&quot; </span><span class="s1">&lt;&lt; e.getEId() &lt;&lt; </span><span class="s3">&quot;</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+        <span class="s1">assert( e.getEId() == INVALID_BATT_CAPACITY )</span><span class="s4">;</span>
+    <span class="s1">}</span>
+    <span class="s1">evtol_prop tst(</span><span class="s3">&quot;tst&quot;</span><span class="s4">, </span><span class="s5">1</span><span class="s4">, </span><span class="s5">2</span><span class="s4">, </span><span class="s5">3</span><span class="s4">, </span><span class="s5">1.0</span><span class="s4">, </span><span class="s5">5</span><span class="s4">, </span><span class="s5">7</span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">tst.disp()</span><span class="s4">;</span>
+    <span class="s1">evtol_prop tstA(</span><span class="s3">&quot;alpha&quot;</span><span class="s4">, </span><span class="s5">120</span><span class="s4">, </span><span class="s5">320</span><span class="s4">, </span><span class="s5">.6</span><span class="s4">, </span><span class="s5">1.6</span><span class="s4">, </span><span class="s5">4</span><span class="s4">, </span><span class="s5">0.25</span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">tstA.disp()</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Unit tests for evtol_list class.</span>
+<span class="s4">void </span><span class="s1">evtol_list_unitTest()</span>
+<span class="s1">{</span>
+    <span class="s4">extern </span><span class="s1">evtol_list evtolLst</span><span class="s4">;</span>
+    <span class="s1">evtolLst.disp()</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;Perform visual inspection that above print statements match the company specs.</span><span class="s4">\n</span><span class="s3">&quot;</span><span class="s4">;</span>
+    <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;Alpha name = &quot; </span><span class="s1">&lt;&lt; evtolLst.getCompanyProperty(C_ALPHA)-&gt;kName &lt;&lt; endl</span><span class="s4">;</span>
+    <span class="s1">evtolLst.unitTest()</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Unit test for charge_stations class.</span>
+<span class="s4">void </span><span class="s1">charge_stations_unitTest()</span>
+<span class="s1">{</span>
+    <span class="s1">charger_stations cs</span><span class="s4">;</span>
+    <span class="s1">assert( cs.addVehToCharger(</span><span class="s5">0</span><span class="s1">) == </span><span class="s4">true </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.addVehToCharger( </span><span class="s5">1 </span><span class="s1">) == </span><span class="s4">true </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.addVehToCharger( </span><span class="s5">2 </span><span class="s1">) == </span><span class="s4">true </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.addVehToCharger( </span><span class="s5">3 </span><span class="s1">) == </span><span class="s4">false </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.freeVehFromCharger( </span><span class="s5">3 </span><span class="s1">) == </span><span class="s4">false </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.freeVehFromCharger( </span><span class="s5">2 </span><span class="s1">) == </span><span class="s4">true </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.freeVehFromCharger( </span><span class="s5">1 </span><span class="s1">) == </span><span class="s4">true </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">assert( cs.freeVehFromCharger( </span><span class="s5">0 </span><span class="s1">) == </span><span class="s4">true </span><span class="s1">)</span><span class="s4">;</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief A unit test for the vechicle class for each company type.</span>
+<span class="s4">void </span><span class="s1">vehicle_unitTest()</span>
+<span class="s1">{</span>
+    <span class="s4">extern </span><span class="s1">evtol_list evtolLst</span><span class="s4">;</span>
+
+    <span class="s4">for </span><span class="s1">(uint16_t company=C_ALPHA</span><span class="s4">; </span><span class="s1">company &lt; C_NUM_COMPANIES</span><span class="s4">; </span><span class="s1">company++) {</span>
+        <span class="s1">vehicle v( (evtol_companies_e)company )</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;kCompany: &quot; </span><span class="s1">&lt;&lt; v.kCompany &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_IDLE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.sim() == NO_CHANGE)</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;kBattKwh: &quot; </span><span class="s1">&lt;&lt; evtolLst.getCompanyProperty((evtol_companies_e)company)-&gt;kBattKwh &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;cruise min energy: &quot; </span><span class="s1">&lt;&lt; evtolLst.getCruiseMinEnergy((evtol_companies_e)company) &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s0">//uint16_t vFlightMins = fabs(evtolLst.getCompanyProperty((evtol_companies_e)company)-&gt;kBattKwh /</span>
+        <span class="s0">//                            evtolLst.getCruiseMinEnergy((evtol_companies_e)company));</span>
+        <span class="s1">uint16_t vFlightMins = ceil((evtolLst.getCompanyProperty((evtol_companies_e)company)-&gt;kBattKwh</span>
+                                     <span class="s1">- evtolLst.getCruiseMinEnergy((evtol_companies_e)company)) /</span>
+                                    <span class="s1">evtolLst.getCruiseMinEnergy((evtol_companies_e)company)) - </span><span class="s5">1</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;vFlightMins = &quot; </span><span class="s1">&lt;&lt; vFlightMins &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s1">v.startFlight(</span><span class="s5">1</span><span class="s1">)</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_IN_FLIGHT)</span><span class="s4">;</span>
+        <span class="s4">for </span><span class="s1">(uint16_t i = </span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; vFlightMins</span><span class="s4">; </span><span class="s1">i++) {</span>
+            <span class="s1">assert(v.sim() == NO_CHANGE)</span><span class="s4">;</span>
+            <span class="s1">assert(v.getCurrentState() == VS_IN_FLIGHT)</span><span class="s4">;</span>
+        <span class="s1">}</span>
+        <span class="s0">//v.disp();</span>
+        <span class="s1">assert(v.sim() == FLIGHT_COMPLETE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_WAIT_CHARGE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.sim() == NO_CHANGE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_WAIT_CHARGE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.sim() == NO_CHANGE)</span><span class="s4">;</span>
+        <span class="s1">v.startCharging()</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_IN_CHARGE)</span><span class="s4">;</span>
+        <span class="s1">uint16_t vChargeMins = ceil(evtolLst.getCompanyProperty((evtol_companies_e)company)-&gt;kTimeToChargeHrs * </span><span class="s5">60</span><span class="s1">) </span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;vChargeMins:&quot; </span><span class="s1">&lt;&lt; vChargeMins &lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s1">cout &lt;&lt; </span><span class="s3">&quot;charge per min: &quot; </span><span class="s1">&lt;&lt; evtolLst.getChargeMinEnergy( (evtol_companies_e)company )&lt;&lt; endl</span><span class="s4">;</span>
+        <span class="s4">for </span><span class="s1">(uint16_t i = </span><span class="s5">0</span><span class="s4">; </span><span class="s1">i &lt; vChargeMins</span><span class="s4">; </span><span class="s1">i++) {</span>
+            <span class="s0">//cout &lt;&lt; &quot;i:&quot; &lt;&lt; i &lt;&lt; &quot;, vChargeMins:&quot; &lt;&lt; vChargeMins &lt;&lt; endl;</span>
+            <span class="s1">assert(v.sim() == NO_CHANGE)</span><span class="s4">;</span>
+            <span class="s1">assert(v.getCurrentState() == VS_IN_CHARGE)</span><span class="s4">;</span>
+        <span class="s1">}</span>
+        <span class="s0">//v.disp();</span>
+        <span class="s1">assert(v.sim() == CHARGE_COMOPLETE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_IDLE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.sim() == NO_CHANGE)</span><span class="s4">;</span>
+        <span class="s1">assert(v.getCurrentState() == VS_IDLE)</span><span class="s4">;</span>
+        <span class="s0">//v.disp();</span>
+    <span class="s1">}</span>
+<span class="s1">}</span>
+
+<span class="s0">/// \brief Bottom up unit test.</span>
+<span class="s0">/// TODO: Install google test then utilize mock classes for a top-down testing.</span>
+<span class="s4">void </span><span class="s1">unitTest( </span><span class="s4">void </span><span class="s1">)</span>
+<span class="s1">{</span>
+    <span class="s1">evtol_prop_unitTest()</span><span class="s4">;</span>
+    <span class="s1">evtol_list_unitTest()</span><span class="s4">;</span>
+    <span class="s1">charge_stations_unitTest()</span><span class="s4">;</span>
+    <span class="s1">vehicle_unitTest()</span><span class="s4">;</span>
+
+    <span class="s0">// Note the veh_sim high-level class was not unit-tested.</span>
+    <span class="s0">// The veh_sim class was tested by running the simulation with a log file.</span>
+    <span class="s0">// In the future, a mock-class test frame work could be utilized for testing veh_sim class.</span>
+<span class="s1">}</span>
+
+<span class="s4">int </span><span class="s1">main()</span>
+<span class="s1">{</span>
+    <span class="s1">std::cout &lt;&lt; </span><span class="s3">&quot;Hello, World!&quot; </span><span class="s1">&lt;&lt; std::endl</span><span class="s4">;</span>
+    <span class="s1">unitTest()</span><span class="s4">;</span>
+
+    <span class="s1">veh_sim vs</span><span class="s4">;</span>
+    <span class="s1">vs.simulate( </span><span class="s5">180 </span><span class="s1">)</span><span class="s4">;</span>
+    <span class="s1">vs.displayVehicleStats()</span><span class="s4">;</span>
+    <span class="s4">return </span><span class="s5">0</span><span class="s4">;</span>
+<span class="s1">}</span>
+</pre>
+</body>
+</html>
