@@ -6,20 +6,18 @@
 #include "util.h"
 #include <iostream>
 #include <cassert>
-#include <algorithm>
 
 using namespace std;
 
 // Global variables
-evtol_list evtolLst;
 #undef vstype
 #define vstype(x) #x
 static const char *strVehStates[] = { VEHICLE_STATES };
 
 /// \brief Construct a vehicle based on a company enum.
 /// \param company
-vehicle::vehicle( evtol_companies_e company )
-    : kCompany( company ),
+vehicle::vehicle( const evtol_prop &evProp )
+    : vehProp( evProp ),
     currentState( VS_IDLE ),
     totFaultCount( 0 ),
     numFlights( 0 ),
@@ -28,6 +26,7 @@ vehicle::vehicle( evtol_companies_e company )
     totChargeTime( 0 ),
     totDistance( 0.0 ),
     missionPassCnt( 0 )
+
 {
     missionChargeTime = 0;
     missionFlightTime = 0;
@@ -35,7 +34,7 @@ vehicle::vehicle( evtol_companies_e company )
     missionFaultCount = 0;
     totPassMiles = 0.0;
 
-    batteryCapacity = evtolLst.getCompanyProperty( kCompany )->kBattKwh;
+    batteryCapacity = vehProp.kBattKwh;
 
 }
 
@@ -59,14 +58,13 @@ sim_result_e vehicle::sim( )
             break;
         case VS_IN_FLIGHT:
             missionFlightTime++;
-            missionDistance += evtolLst.getCruiseMinDistance( kCompany );
-            if (rand() < (( evtolLst.getCompanyProperty(kCompany)->kFaultProbPerHour * RAND_MAX ) / 60))
+            missionDistance += vehProp.kMinuteCruiseDistance;
+            if (rand() < (( vehProp.kFaultProbPerHour * RAND_MAX ) / 60))
             {
                 missionFaultCount++;
             }
-            batteryCapacity -= evtolLst.getCruiseMinEnergy( kCompany );
-            //if (cmpd(batteryCapacity, 0.0, evtolLst.getCruiseMinEnergy( kCompany )))
-            if (cmpLessOrEqual(batteryCapacity, evtolLst.getCruiseMinEnergy( kCompany )))
+            batteryCapacity -= vehProp.kCruiseMinuteEnergy;
+            if (cmpLessOrEqual(batteryCapacity, vehProp.kCruiseMinuteEnergy ))
             {
                 batteryCapacity = 0.0;
                 nextState = VS_WAIT_CHARGE;
@@ -81,19 +79,14 @@ sim_result_e vehicle::sim( )
                 totFaultCount += missionFaultCount;
                 missionFaultCount = 0;
             }
-            else
-            {
-                //batteryCapacity -= evtolLst.getCruiseMinEnergy( kCompany );
-            }
             break;
         case VS_WAIT_CHARGE:
             break;
         case VS_IN_CHARGE:
             missionChargeTime++;
-            if (cmpGreaterOrEqual(batteryCapacity,
-                    evtolLst.getCompanyProperty( kCompany )->kBattKwh))
+            if (cmpGreaterOrEqual(batteryCapacity,vehProp.kBattKwh))
             {
-                batteryCapacity = evtolLst.getCompanyProperty( kCompany )->kBattKwh;
+                batteryCapacity = vehProp.kBattKwh;
                 nextState = VS_IDLE;
                 RV = CHARGE_COMOPLETE;
                 totChargeTime += missionChargeTime;
@@ -102,7 +95,7 @@ sim_result_e vehicle::sim( )
             }
             else
             {
-                batteryCapacity += evtolLst.getChargeMinEnergy( kCompany );
+                batteryCapacity += vehProp.kMinuteChargeEnergy;
             }
             break;
         default:
@@ -138,7 +131,7 @@ string vehicle::logEntry( )
     switch (currentState)
     {
         case VS_IDLE:
-            s = (string)strVehStates[currentState] + "-" + (string)getCompanyName( kCompany );
+            s = (string)strVehStates[currentState] + "-" + (string)getCompanyName( vehProp.kCompany );
             break;
         case VS_IN_FLIGHT:
             s = (string)strVehStates[currentState] + "-"
@@ -146,7 +139,7 @@ string vehicle::logEntry( )
                 + to_string(missionFlightTime);
             break;
         case VS_WAIT_CHARGE:
-            s = (string)strVehStates[currentState] + "-" + (string)getCompanyName( kCompany );
+            s = (string)strVehStates[currentState] + "-" + (string)getCompanyName( vehProp.kCompany );
             break;
         case VS_IN_CHARGE:
             s = (string)strVehStates[currentState] + "-"
@@ -159,10 +152,10 @@ string vehicle::logEntry( )
 /// \brief Display this vehicle.
 void vehicle::disp( )
 {
-    cout << "company: " << kCompany << endl
+    cout << "company: " << vehProp.kCompany << endl
          << "   battery: " << batteryCapacity << endl
-         << "      minute cruise energy: " << evtolLst.getCruiseMinEnergy( kCompany ) << endl
-         << "      minute charge energy: " << evtolLst.getChargeMinEnergy( kCompany ) << endl
+         << "      minute cruise energy: " << vehProp.kCruiseMinuteEnergy  << endl
+         << "      minute charge energy: " << vehProp.kMinuteChargeEnergy <<  endl
          << "   numFlights: " << numFlights << endl
          << "      totFlightTime: " << totFlightTime << ", missionFlightTime:" << missionFlightTime << endl
          << "      totDistance: " << totDistance << ", missionDistance: " << missionDistance << endl
@@ -205,7 +198,7 @@ void vehicle::displayStatistics( string s )
     {
         timeChargingPerSession = "No charge cycles were found.";
     }
-    cout << "Vehicle: " << s << ", Company: " << getCompanyName( kCompany ) << ", numFlights: " << numFlights << ", numCharges: " << numCharges <<  endl;
+    cout << "Vehicle: " << s << ", Company: " << getCompanyName( vehProp.kCompany ) << ", numFlights: " << numFlights << ", numCharges: " << numCharges <<  endl;
     cout << "   Average flight time per flight (minutes) = " << flightTimePerFlight << endl;
     cout << "   Average distance traveled per flight (miles) = " << distancePerFlight << endl;
     cout << "   Average time charging per charge session (minutes) = " << timeChargingPerSession << endl;
@@ -234,6 +227,8 @@ charger_stations::~charger_stations( )
 bool charger_stations::addVehToCharger( uint16_t vehID )
 {
     bool RV = false;
+
+    assert( vehID < kNumSimVehicles );
     for (uint16_t i=0; i < kNumChargers; i++)
     {
         if (chargers[i] == kEmptyCharger)
@@ -252,6 +247,8 @@ bool charger_stations::addVehToCharger( uint16_t vehID )
 bool charger_stations::freeVehFromCharger( uint16_t vehID )
 {
     bool RV = false;
+
+    assert( vehID < kNumSimVehicles );
     for (uint16_t i=0; i < kNumChargers; i++)
     {
         if (chargers[i] == vehID)
@@ -330,7 +327,7 @@ veh_sim::veh_sim( uint32_t seed )
         cout << "    rndVehCntByCompany[ company ] = " << rndVehCntByCompany[ company ] << endl;
         for (uint16_t i=0; i < rndVehCntByCompany[ company ]; i++ )
         {
-            v.push_back(  vehicle( (evtol_companies_e)company )  );
+            v.push_back(  vehicle( companyList.getCompanyProperty( (evtol_companies_e)company )  ) );
         }
         cout << "    v size = " << v.size() << "\n";
     }
@@ -378,11 +375,10 @@ uint16_t veh_sim::findMissionCableVeh( vector<uint16_t> vehIDVect, uint16_t miss
 
     for (uint16_t i=0; i < vehIDVect.size(); i++)
     {
-        if (evtolLst.getCompanyProperty( v[vehIDVect[i]].kCompany )->kMaxPassengers > mission)
+        if ( v[vehIDVect[i]].vehProp.kMaxPassengers > mission )
         {
             if ((RV == kInvalidVeh) ||
-                (evtolLst.getCompanyProperty( v[vehIDVect[i]].kCompany )->kMaxPassengers
-                 < evtolLst.getCompanyProperty( v[RV].kCompany )->kMaxPassengers ))
+                (v[vehIDVect[i]].vehProp.kMaxPassengers < v[RV].vehProp.kMaxPassengers ))
             {
                 RV = i;
             }
@@ -408,7 +404,7 @@ void veh_sim::simMinute( )
     // Queue up a backlog of missions(flights) to the depth of simulated vehicles.
     if (missionQ.size() < kNumSimVehicles)
     {
-        missionQ.push_back( evtolLst.getRndVehPassCnt() );
+        missionQ.push_back( companyList.getRndVehPassCnt() );
     }
 
     // Update each vehicle's simulation.

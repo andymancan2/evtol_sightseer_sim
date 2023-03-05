@@ -33,7 +33,7 @@ enum sim_result_e
 /// \brief Class to simulate a evtol vehicle.
 class vehicle {
 public:
-    const evtol_companies_e kCompany;
+    const evtol_prop &vehProp;
 private:
     vehicle_state_e currentState;
     double batteryCapacity;
@@ -50,7 +50,7 @@ private:
     double   missionDistance;
     double   totPassMiles;
 public:
-    vehicle( evtol_companies_e company );
+    vehicle( const evtol_prop &evProp );
     sim_result_e sim( );
     void startFlight( uint16_t numPass );
     void startCharging( );
@@ -90,6 +90,9 @@ private:
     const uint32_t seedForRandomVehicleConfiguration;
     /// \brief Seed used for randomizing the simulation execution.
     uint32_t seedForStartingSimulation;
+    /// \brief List of companies used to the maximum passenger capacity.
+    evtol_list companyList;
+
 public:
     /// \brief The list of vehicles which the size remains constant for the simulation.
     std::vector< vehicle > v;

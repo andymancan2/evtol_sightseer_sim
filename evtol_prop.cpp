@@ -7,7 +7,6 @@
 #include <iostream>
 #include <cassert>
 
-
 using namespace std;
 
 // Globals
@@ -45,16 +44,19 @@ evtol_prop_exc InvalidBattCapacity(INVALID_BATT_CAPACITY);
 // Created by ajlou on 2/10/2023.
 //
 /// \brief Construct evtol properties.
+/// \param name
+/// \param company
 /// \param cruiseSpeedMph
 /// \param battKwh
 /// \param timeToChargeHrs
 /// \param energyUseKwhPerMil
 /// \param maxPassergers
 /// \param faultProbPerHour
-evtol_prop::evtol_prop(const char *name, uint32_t cruiseSpeedMph, uint32_t battKwh, double timeToChargeHrs,
+evtol_prop::evtol_prop(const char *name, evtol_companies_e company, uint32_t cruiseSpeedMph, uint32_t battKwh, double timeToChargeHrs,
                        double energyUseKwhPerMil,
                        uint32_t maxPassergers, double faultProbPerHour) :
         kName(name),
+        kCompany(company),
         kCruiseSpeedMph(cruiseSpeedMph),
         kBattKwh(battKwh),
         kTimeToChargeHrs(timeToChargeHrs),
@@ -62,7 +64,12 @@ evtol_prop::evtol_prop(const char *name, uint32_t cruiseSpeedMph, uint32_t battK
         kMaxPassengers(maxPassergers),
         kFaultProbPerHour(faultProbPerHour),
         kMaxDistance(kBattKwh / kEnergyUseKwhPerMile),
-        kMaxCruiseHrs(kMaxDistance / kCruiseSpeedMph) {
+        kMaxCruiseHrs(kMaxDistance / kCruiseSpeedMph),
+        kMinuteCruiseDistance((double)kCruiseSpeedMph / 60),
+        kCruiseMinuteEnergy(kMinuteCruiseDistance * kEnergyUseKwhPerMile),
+        kTimeToChargeMinutes(kTimeToChargeHrs * 60),
+        kMinuteChargeEnergy(kBattKwh / kTimeToChargeMinutes)
+ {
     if (kCruiseSpeedMph == 0) {
         throw InvalidCruise;
     }
@@ -92,89 +99,18 @@ void evtol_prop::disp(void) {
          << "\n";
 }
 
-/// \brief Construct a list of evtol companies that is addressable by an enum.
-evtol_list::evtol_list()
-        : alpha("ALPHA", 120, 320, .6, 1.6, 4, 0.25),
-          bravo("BRAVO", 100, 100, .2, 1.5, 5, 0.1),
-          charlie("CHARLIE", 160, 220, .8, 2.2, 3, 0.05),
-          delta("DELTA", 90, 120, .62, .8, 2, 0.22),
-          echo("ECHO", 30, 150, .3, 5.8, 2, 0.61),
-          lst{&alpha, &bravo, &charlie, &delta, &echo}
-{
-    maxPassCnt = 0;
-
-    for (uint16_t i=0; i < C_NUM_COMPANIES; i++)
-    {
-        if (lst[i]->kMaxPassengers > maxPassCnt)
-        {
-            maxPassCnt = lst[i]->kMaxPassengers;
-        }
+/// \brief Display the evtol properies of all companies.
+void evtol_list::disp(void) {
+    for (uint8_t i = 0; i < C_NUM_COMPANIES; i++) {
+        lst[i].disp();
     }
-}
-
-/// \brief Test that enum indexing is working.
-void evtol_list::unitTest( void )
-{
-    assert( getCompanyProperty(C_ALPHA)->kName == alpha.kName );
-    assert( getCompanyProperty(C_ALPHA)->kName == "ALPHA" );
-    assert( getCompanyProperty(C_BRAVO)->kName == "BRAVO" );
-    assert( getCompanyProperty(C_CHARLIE)->kName == "CHARLIE" );
-    assert( getCompanyProperty(C_DELTA)->kName == "DELTA" );
-    assert( getCompanyProperty(C_ECHO)->kName == "ECHO" );
-}
-
-/// \brief A function to access the company propeties by enum.
-/// \param company
-/// \return
-evtol_prop * evtol_list::getCompanyProperty( evtol_companies_e company )
-{
-  return lst[ company ];
-}
-
-/// \brief Return the energy usuage at cruise on a per minute basis.
-/// \param company
-/// \return
-double evtol_list::getCruiseMinEnergy( evtol_companies_e company )
-{
-    double RV;
-
-    RV = getCruiseMinDistance( company ) * lst[ company ]->kEnergyUseKwhPerMile;
-    return RV;
-}
-
-/// \brief Return the energy charge capability on a per minute basis.
-/// \param company
-/// \return
-double evtol_list::getChargeMinEnergy( evtol_companies_e company )
-{
-    double timeToChargeMins = lst[ company ]->kTimeToChargeHrs * 60;
-    double RV = (lst[ company ]->kBattKwh / timeToChargeMins);
-
-    return RV;
-}
-
-/// \brief Get the distance at cruise speed for a per minute basis.
-/// \param company
-/// \return
-double evtol_list::getCruiseMinDistance( evtol_companies_e company )
-{
-    double RV = (double)lst[ company ]->kCruiseSpeedMph / 60;
-
-    return RV;
 }
 
 /// \brief Get a random passenger count based on the maximum pass count of company types.
 /// \return
 uint16_t evtol_list::getRndVehPassCnt( void )
 {
-    uint16_t RV = (rand() % (maxPassCnt - 1)) + 1;// At least one.
+    uint16_t RV = (rand() % (maxPassengers - 1)) + 1;// At least one.
 
     return RV;
-}
-
-/// \brief Display the evtol properies of all companies.
-void evtol_list::disp(void) {
-    for (uint8_t i = 0; i < C_NUM_COMPANIES; i++) {
-        lst[i]->disp();
-    }
 }

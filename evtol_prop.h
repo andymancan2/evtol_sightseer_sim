@@ -5,9 +5,29 @@
 #ifndef EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H
 #define EVTOL_SIGHTSEER_SIM_EVTOL_PROP_H
 
+
 #include <cstdint>
 #include <exception>
 #include <map>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <exception>
+using namespace std;
+
+//TODO: This 'C' language pattern for managing enums and string versions of enums is convenient.
+//      But may need to be revised for coding standard.
+#define COMPANY_LIST \
+    etype(ALPHA), \
+    etype(BRAVO),   \
+    etype(CHARLIE),  \
+    etype(DELTA),  \
+    etype(ECHO), \
+    etype(NUM_COMPANIES)
+#define etype(x) C_##x
+typedef enum { COMPANY_LIST } evtol_companies_e;
+const char * getCompanyName( evtol_companies_e c );
 
 /// \brief Enumeration of exception IDs for invalid properties.
 enum evtol_prop_exc_ids_e
@@ -30,6 +50,7 @@ struct evtol_prop_exc : public std::exception
 class evtol_prop {
 public:
     const char* kName;
+    const evtol_companies_e kCompany;
     const uint32_t kCruiseSpeedMph;
     const uint32_t kBattKwh;
     const double kTimeToChargeHrs;
@@ -38,8 +59,13 @@ public:
     const double kFaultProbPerHour;
     const double kMaxDistance;
     const double kMaxCruiseHrs;
+    const double kMinuteCruiseDistance;
+    const double kCruiseMinuteEnergy;
+    const double kTimeToChargeMinutes;
+    const double kMinuteChargeEnergy;
     evtol_prop(
             const char* name,
+            evtol_companies_e company,
             uint32_t cruiseSpeedMph,
             uint32_t battKwh,
             double timeToChargeHrs,
@@ -50,37 +76,34 @@ public:
     void disp( void );
 };
 
-//TODO: This 'C' language pattern for managing enums and string versions of enums is convenient.
-//      But may need to be revised for coding standard.
-#define COMPANY_LIST \
-    etype(ALPHA), \
-    etype(BRAVO),   \
-    etype(CHARLIE),  \
-    etype(DELTA),  \
-    etype(ECHO), \
-    etype(NUM_COMPANIES)
-#define etype(x) C_##x
-typedef enum { COMPANY_LIST } evtol_companies_e;
-const char * getCompanyName( evtol_companies_e c );
-
-/// \brief A class to manage all evtol company properties.
 class evtol_list
 {
-    evtol_prop alpha;
-    evtol_prop bravo;
-    evtol_prop charlie;
-    evtol_prop delta;
-    evtol_prop echo;
-    evtol_prop *lst[ C_NUM_COMPANIES ];
-    uint16_t maxPassCnt;
+private:
+    evtol_prop lst[C_NUM_COMPANIES] {
+        { "ALPHA", C_ALPHA, 120, 320, .6, 1.6, 4, 0.25 },
+        {"BRAVO", C_BRAVO, 100, 100, .2, 1.5, 5, 0.1 },
+        { "CHARLIE", C_CHARLIE, 160, 220, .8, 2.2, 3, 0.05 },
+        { "DELTA", C_DELTA, 90, 120, .62, .8, 2, 0.22 },
+        { "ECHO", C_ECHO, 30, 150, .3, 5.8, 2, 0.61 } };
+    uint16_t maxPassengers { 0 };
+
 public:
-    evtol_list();
-    evtol_prop * getCompanyProperty( evtol_companies_e company );
-    double getCruiseMinEnergy( evtol_companies_e company );
-    double getChargeMinEnergy( evtol_companies_e company );
-    double getCruiseMinDistance( evtol_companies_e company );
+    evtol_list()
+    {
+        for (auto it : lst) {
+            if (it.kMaxPassengers > maxPassengers) {
+                maxPassengers = it.kMaxPassengers;
+            }
+        }
+    }
+
+    const evtol_prop& getCompanyProperty( evtol_companies_e company )
+    {
+        return lst[ company ];
+    };
+
+    uint16_t getMaxPassOfAllCompanies() { return maxPassengers; }
     uint16_t getRndVehPassCnt( void );
-    void unitTest( void );
 
     void disp( void );
 };
